@@ -1,19 +1,28 @@
 
 import sys
-sys.path.insert(0, r'C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject')
+import os
+current_path = os.getcwd()
+sys.path.insert(0, os.path.join(current_path, 'pythonProject')) #working directory needs to be \urbanml
+
 
 import matplotlib.pyplot as plt
-import os
 import pandas as pd
 import kostra
 from datetime import timedelta
 
-folder_path = r'C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\Kostra'
+# path to the kostra raw data
+Kostra_raw_path = os.path.join(current_path, 'pythonProject\\Kostra')
+# folder_path = r'C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\Kostra' #old path
 time_kostra = 720
 
+## Get the kostra data for INDEX_RC 118111
+#kostra_118111 = kostra.get_kostra_by_index_rc(Kostra_raw_path,118111, 'urbanml\\pythonProject\\')
 
-#kostra_118111 = kostra.get_kostra_by_index_rc(folder_path,118111, 'urbanml\\pythonProject\\')
-kostra_118111 = pd.read_csv('C:\\Users\\Laptop-F-Albers\\PycharmProjects\\urbanml\\pythonProject\\kostra_118111.csv', delimiter=';')
+# current path to the kostra data extracted by kostra.py
+kostra_data_path = os.path.join(current_path, 'pythonProject\\kostra_118111.csv')
+
+
+kostra_118111 = pd.read_csv(kostra_data_path, delimiter=';')
 kostra_118111['dauer'] = pd.to_timedelta(kostra_118111['dauer'].astype(float), unit='m')
 kostra_118111.set_index('dauer', inplace=True)
 # Create a new DataFrame with index '0 days 00:00:00' and all values 0
