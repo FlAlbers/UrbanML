@@ -22,7 +22,7 @@ Kostra_raw_path = os.path.join(current_path, 'pythonProject\\Kostra')
 kostra_data_path = os.path.join(current_path, 'pythonProject\\kostra_118111.csv')
 
 
-kostra_118111 = pd.read_csv(kostra_data_path, delimiter=';')
+kostra_118111 = pd.read_csv(kostra_data_path, delimiter=',')
 kostra_118111['duration'] = pd.to_timedelta(kostra_118111['duration'].astype(float), unit='m')
 kostra_118111.set_index('duration', inplace=True)
 # selected_columns = ['HN_001A', 'HN_002A', 'HN_003A', 'HN_005A', 'HN_010A', 'HN_020A', 'HN_030A', 'HN_050A', 'HN_100A']
@@ -74,7 +74,7 @@ for j in jaerlichkeiten:
         euler2 = euler2.sort_index()
         index_min = euler2.index.total_seconds() / 60
         euler2.index = index_min.astype(int)
-        euler2[j].to_csv(f'pythonProject\\climate_data\\euler2_{j}a_{int(d)}.csv', sep=';', header=True, index=True)
+        euler2[j].to_csv(f'pythonProject\\climate_data\\euler2_{j}a_{int(d)}.csv', sep=',', header=True, index=True)
 
 
 # kostra_d['HN_001A'].plot()
