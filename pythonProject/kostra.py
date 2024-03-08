@@ -1,6 +1,8 @@
 
 import os
 import pandas as pd
+import os
+import pandas as pd
 
 # folder_path = r'C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\Kostra'
 
@@ -23,7 +25,7 @@ def get_kostra_by_index_rc(folder_path, index_rc, savePath=''):
             table_name = file_name[:-4][-10:]
             
             # Add dauer to df_filtered
-            df_filtered['dauer'] = file_name[:-4][-5:]
+            df_filtered['duration'] = file_name[:-4][-5:].lstrip('0')
             df_filtered.set_index('dauer', inplace=True)
 
             # Append the filtered DataFrame to a new DataFrame
@@ -35,8 +37,14 @@ def get_kostra_by_index_rc(folder_path, index_rc, savePath=''):
      
     combined_df = combined_df.replace(',', '.', regex=True)
     combined_df = combined_df.astype(float, errors='ignore')
-    combined_df.to_csv(f'{savePath}kostra_{index_rc}.csv', sep=';',header=True)
+    selected_columns = ['HN_001A', 'HN_002A', 'HN_003A', 'HN_005A', 'HN_010A', 'HN_020A', 'HN_030A', 'HN_050A', 'HN_100A']
+    combined_df = combined_df[selected_columns]
+    combined_df.columns = ['1', '2', '3', '5', '10', '20', '30', '50', '100']
+    combined_df.to_csv(f'{savePath}kostra_{index_rc}.csv', sep=',',header=True)
 
-        
+# Kostra_raw_path = 'C:\\Users\\fl-al\\PythonProjects\\urbanml\\pythonProject\\Kostra'
+# kostra_118111 = get_kostra_by_index_rc(Kostra_raw_path,118111, 'pythonProject\\')
 
-        
+# current_directory = os.getcwd()
+# print(current_directory)
+
