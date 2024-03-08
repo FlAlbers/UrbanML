@@ -74,7 +74,7 @@ for j in jaerlichkeiten:
         euler2 = euler2.sort_index()
         index_min = euler2.index.total_seconds() / 60
         euler2.index = index_min.astype(int)
-        euler2[j].to_csv(f'pythonProject\\climate_data\\euler2_{j}a_{int(d)}.csv', sep=',', header=True, index=True)
+        euler2[j].to_csv(f'pythonProject\\climate_data\\euler2_T{j}D{int(d)}.csv', sep=',', header=True, index=True)
 
 
 # kostra_d['HN_001A'].plot()

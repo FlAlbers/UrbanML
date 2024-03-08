@@ -24,9 +24,9 @@ def get_kostra_by_index_rc(folder_path, index_rc, savePath=''):
             # Get the last 6 characters of the file name (excluding the extension)
             table_name = file_name[:-4][-10:]
             
-            # Add dauer to df_filtered
+            # Add duration to df_filtered
             df_filtered['duration'] = file_name[:-4][-5:].lstrip('0')
-            df_filtered.set_index('dauer', inplace=True)
+            df_filtered.set_index('duration', inplace=True)
 
             # Append the filtered DataFrame to a new DataFrame
             if combined_df.empty == True:
@@ -34,16 +34,22 @@ def get_kostra_by_index_rc(folder_path, index_rc, savePath=''):
             else:
                 combined_df = pd.concat([combined_df, df_filtered])
 
-     
+    # Replace commas with dots and convert to float
     combined_df = combined_df.replace(',', '.', regex=True)
     combined_df = combined_df.astype(float, errors='ignore')
+
+    #rename columns and round data to 2 decimal places
     selected_columns = ['HN_001A', 'HN_002A', 'HN_003A', 'HN_005A', 'HN_010A', 'HN_020A', 'HN_030A', 'HN_050A', 'HN_100A']
-    combined_df = combined_df[selected_columns]
+    combined_df = combined_df[selected_columns].round(2)
+
+    #rename columns
     combined_df.columns = ['1', '2', '3', '5', '10', '20', '30', '50', '100']
+
+    # Save the DataFrame to a CSV file
     combined_df.to_csv(f'{savePath}kostra_{index_rc}.csv', sep=',',header=True)
 
-# Kostra_raw_path = 'C:\\Users\\fl-al\\PythonProjects\\urbanml\\pythonProject\\Kostra'
-# kostra_118111 = get_kostra_by_index_rc(Kostra_raw_path,118111, 'pythonProject\\')
+Kostra_raw_path = 'C:\\Users\\fl-al\\PythonProjects\\urbanml\\pythonProject\\Kostra'
+kostra_118111 = get_kostra_by_index_rc(Kostra_raw_path,118111, 'pythonProject\\')
 
 # current_directory = os.getcwd()
 # print(current_directory)
