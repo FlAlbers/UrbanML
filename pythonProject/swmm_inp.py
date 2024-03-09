@@ -36,15 +36,13 @@ def get_euler_ts(kostra, return_period, duration, interval = 5, euler_typ = 2, s
     return ts
 
 # helper function to add euler model rain series to inp file
-def euler_to_inp(inp,kostra, return_period, duration, interval = None, euler_typ = None, start_time = ''):
+def euler_to_inp(input,kostra, return_period, duration, interval = None, euler_typ = None, start_time = ''):
     euler2 = get_euler_ts(kostra, return_period=return_period, duration=duration, interval=interval, euler_typ=euler_typ, start_time=start_time)
     name = f'e2_T{int(return_period)}D{int(duration)}'
     euler2.name = name
-    inp[sections.TIMESERIES].add_obj(TimeseriesData(name, data=list(zip(euler2.index,euler2))))
-    return inp
+    input[sections.TIMESERIES].add_obj(TimeseriesData(name, data=list(zip(euler2.index,euler2))))
+    return input
 
-# read inp file
-inp_base = swmm_api.read_inp_file('pythonProject\\swmm_Gievenbeck.inp')
 
 # get return preiods and durations from kostra table
 jaerlichkeiten = kostra.columns.astype(int)
@@ -54,6 +52,18 @@ dauern = kostra.index[kostra.index >= 15]
 name_place = 'Gievenbeck'
 save_inp_path = os.path.join(current_path, 'pythonProject\\inp')
 euler_typ = 2
+start_time = pd.to_datetime('2024-01-01 00:00')
+buffer_time = pd.Timedelta('2h')
+
+# read inp file
+inp_base = swmm_api.read_inp_file('pythonProject\\swmm_Gievenbeck.inp')
+
+# Update OPTIONS of inp file
+inp_base['OPTIONS'].update({'START_DATE': start_time.date()})
+inp_base['OPTIONS'].update({'START_TIME': start_time.time()})
+inp_base['OPTIONS'].update({'REPORT_START_DATE': start_time.date()})
+inp_base['OPTIONS'].update({'REPORT_START_TIME': start_time.time()})
+
 
 # inp = euler_to_inp(inp_base,kostra, return_period=jaerlichkeiten[0], duration=dauern[0], interval=5, euler_typ=2, start_time='2024-01-01 00:00')
 # print(inp[sections.TIMESERIES].to_inp_lines())
@@ -61,12 +71,21 @@ euler_typ = 2
 #get all euler model rain series for all return periods and durations
 for j in jaerlichkeiten:
     for d in dauern:
-        inp = euler_to_inp(inp_base,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time='2024-01-01 00:00')
+        inp = inp_base
+        end_time = start_time + pd.Timedelta(minutes=int(d)) + buffer_time * 2
+        inp = euler_to_inp(inp,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time=start_time + buffer_time)
+        for subcatchment in inp['SUBCATCHMENTS']:
+            inp['SUBCATCHMENTS'][subcatchment].rain_gage = f'e{euler_typ}_T{int(j)}D{int(d)}'
+        inp['OPTIONS'].update({'END_DATE': end_time.date()})
+        inp['OPTIONS'].update({'END_TIME': end_time.time()})
+        # inp[sections.TIMESERIES].update(inp_base[sections.TIMESERIES])
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}.inp'))
+        # inp = SwmmInput()
 
 
 
-
+# print(dict(inp_base[sections.TIMESERIES]))
+# print(dir(inp_base[sections.TIMESERIES]))
 
 
 
