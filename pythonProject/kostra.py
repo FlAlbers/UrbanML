@@ -1,14 +1,23 @@
 
 import os
 import pandas as pd
-import os
-import pandas as pd
+import sys
+path = os.path.join(os.getcwd(), 'pythonProject', 'py-kostra-master')
+sys.path.append(path)
+import pykostra as pyk
+import download
+
+current_path = os.getcwd()
+
 
 # folder_path = r'C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\Kostra'
 
-def get_kostra_by_index_rc(folder_path, index_rc, savePath=''):
+def get_kostra_by_index_rc(folder_path, index_rc, savePath='', download=False):
+    if download:
+        download.get_raw(type='tab')
+        pyk.get_csv_files()
     # Get a list of all files in the folder
-    file_list = os.listdir(folder_path)
+    file_list = [file_name for file_name in os.listdir(folder_path) if file_name.startswith('StatRR')]
 
     combined_df = pd.DataFrame()
     # Iterate over each file
@@ -48,9 +57,8 @@ def get_kostra_by_index_rc(folder_path, index_rc, savePath=''):
     # Save the DataFrame to a CSV file
     combined_df.to_csv(f'{savePath}kostra_{index_rc}.csv', sep=',',header=True)
 
-Kostra_raw_path = 'C:\\Users\\fl-al\\PythonProjects\\urbanml\\pythonProject\\Kostra'
+
+Kostra_raw_path = os.path.join(os.getcwd(),'unzip')
 kostra_118111 = get_kostra_by_index_rc(Kostra_raw_path,118111, 'pythonProject\\')
 
-# current_directory = os.getcwd()
-# print(current_directory)
 

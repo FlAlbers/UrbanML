@@ -1,0 +1,10 @@
+name: pykostra
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - xarray
+  - pandas
+  - openpyxl
+  - bs4
+  - matplotlib

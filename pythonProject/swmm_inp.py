@@ -15,15 +15,16 @@ from swmm_api.input_file.section_types import SECTION_TYPES
 from swmm_api.input_file.sections import Timeseries
 from swmm_api.input_file.sections.others import TimeseriesData, TimeseriesFile
 
-#get current path of working directory
+
+# get current path of working directory
 current_path = os.getcwd()
-#path to kostra data
+# path to kostra data
 kostra_data_path = os.path.join(current_path, 'pythonProject\\kostra_118111.csv')
-#read kostra data
+# read kostra data
 kostra = pd.read_csv(kostra_data_path, delimiter=',', index_col=0)
 
 
-#helper function to get euler model rain series from kostra table
+# helper function to get euler model rain series from kostra table
 def get_euler_ts(kostra, return_period, duration, interval = 5, euler_typ = 2, start_time = '2024-01-01 00:00'):
     # kostra = pd.read_csv(kostra_data_path, delimiter=',', index_col=0)
     model_rain = RainModeller()
@@ -34,7 +35,7 @@ def get_euler_ts(kostra, return_period, duration, interval = 5, euler_typ = 2, s
     ts = ts.rename('KOSTRA')
     return ts
 
-#helper function to add euler model rain series to inp file
+# helper function to add euler model rain series to inp file
 def euler_to_inp(inp,kostra, return_period, duration, interval = None, euler_typ = None, start_time = ''):
     euler2 = get_euler_ts(kostra, return_period=return_period, duration=duration, interval=interval, euler_typ=euler_typ, start_time=start_time)
     name = f'e2_T{int(return_period)}D{int(duration)}'
@@ -42,10 +43,10 @@ def euler_to_inp(inp,kostra, return_period, duration, interval = None, euler_typ
     inp[sections.TIMESERIES].add_obj(TimeseriesData(name, data=list(zip(euler2.index,euler2))))
     return inp
 
-#read inp file
+# read inp file
 inp_base = swmm_api.read_inp_file('pythonProject\\swmm_Gievenbeck.inp')
 
-#get return preiods and durations from kostra table
+# get return preiods and durations from kostra table
 jaerlichkeiten = kostra.columns.astype(int)
 # duration needs to be larger than 15min
 dauern = kostra.index[kostra.index >= 15]
@@ -56,8 +57,6 @@ euler_typ = 2
 
 # inp = euler_to_inp(inp_base,kostra, return_period=jaerlichkeiten[0], duration=dauern[0], interval=5, euler_typ=2, start_time='2024-01-01 00:00')
 # print(inp[sections.TIMESERIES].to_inp_lines())
-
-
 
 #get all euler model rain series for all return periods and durations
 for j in jaerlichkeiten:
