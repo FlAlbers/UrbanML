@@ -54,6 +54,7 @@ save_inp_path = os.path.join(current_path, 'pythonProject\\inp')
 euler_typ = 2
 start_time = pd.to_datetime('2024-01-01 00:00')
 buffer_time = pd.Timedelta('2h')
+end_time = start_time + pd.Timedelta(minutes=int(max(dauern))) + buffer_time * 2
 TSname = 'Kostra'
 TSinterval = 5
 
@@ -73,6 +74,8 @@ inp_base['OPTIONS'].update({'START_DATE': start_time.date()})
 inp_base['OPTIONS'].update({'START_TIME': start_time.time()})
 inp_base['OPTIONS'].update({'REPORT_START_DATE': start_time.date()})
 inp_base['OPTIONS'].update({'REPORT_START_TIME': start_time.time()})
+inp_base['OPTIONS'].update({'END_DATE': end_time.date()})
+inp_base['OPTIONS'].update({'END_TIME': end_time.time()})
 inp_base['RAINGAGES']['Kostra']['form'] = 'VOLUME'
 inp_base['RAINGAGES']['Kostra']['interval'] = TSinterval_time 
 inp_base['RAINGAGES']['Kostra']['source'] = 'TIMESERIES'
@@ -89,15 +92,18 @@ inp_base['RAINGAGES']['Kostra']['timeseries'] = TSname
 for j in jaerlichkeiten:
     for d in dauern:
         inp = inp_base
-        end_time = start_time + pd.Timedelta(minutes=int(d)) + buffer_time * 2
+        
         inp = euler_to_inp(inp,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time=start_time + buffer_time)
         for subcatchment in inp['SUBCATCHMENTS']:
             inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSname
-        inp['OPTIONS'].update({'END_DATE': end_time.date()})
-        inp['OPTIONS'].update({'END_TIME': end_time.time()})
-        # inp[sections.TIMESERIES].update(inp_base[sections.TIMESERIES])
+        ## Activate code below to choose relative end time
+        # end_time = start_time + pd.Timedelta(minutes=int(d)) + buffer_time * 2
+        # inp['OPTIONS'].update({'END_DATE': end_time.date()})
+        # inp['OPTIONS'].update({'END_TIME': end_time.time()})
+        
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}.inp'))
-        # inp = SwmmInput()
+        # inp[sections.TIMESERIES].update(inp_base[sections.TIMESERIES])
+
 
 
 

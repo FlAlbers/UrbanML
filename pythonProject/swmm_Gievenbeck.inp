@@ -54,7 +54,8 @@ DRY_ONLY         YES
 ;;Name           Format    Interval SCF      Source    
 ;;-------------- --------- ------ ------ ----------
 Kostra           VOLUME    0:01     1        TIMESERIES Kostra_T1D60    
-MS_OSNA          INTENSITY 1:00     1.0      FILE       "C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\klima_1766.dat" 1766       MM   
+
+;;MS_OSNA          INTENSITY 1:00     1.0      FILE       "C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\klima_1766.dat" 1766       MM   
 
 [SUBCATCHMENTS]
 ;;Name           Rain Gage        Outlet           Area     %Imperv  Width    %Slope   CurbLen  SnowPack        

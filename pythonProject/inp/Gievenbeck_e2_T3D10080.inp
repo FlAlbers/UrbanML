@@ -55,7 +55,6 @@ DRY_ONLY         YES
 ;;____________________________________________________________________________________________________
 [RAINGAGES]
 Kostra VOLUME 0:05 1 TIMESERIES Kostra
-MS_OSNA INTENSITY 1:00 1 FILE C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\klima_1766.dat 1766 MM
 
 
 ;;____________________________________________________________________________________________________
