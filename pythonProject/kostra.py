@@ -7,8 +7,6 @@ sys.path.append(path)
 import pykostra as pyk
 import download
 
-current_path = os.getcwd()
-
 
 # folder_path = r'C:\Users\Laptop-F-Albers\PycharmProjects\urbanml\pythonProject\Kostra'
 
@@ -57,8 +55,9 @@ def get_kostra_by_index_rc(folder_path, index_rc, savePath='', download=False):
     # Save the DataFrame to a CSV file
     combined_df.to_csv(f'{savePath}kostra_{index_rc}.csv', sep=',',header=True)
 
-
-Kostra_raw_path = os.path.join(os.getcwd(),'unzip')
-kostra_118111 = get_kostra_by_index_rc(Kostra_raw_path,118111, 'pythonProject\\')
+if __name__ == '__main__':
+    # get_kostra_by_index_rc(folder_path, 118111, 'pythonProject\\')
+    Kostra_raw_path = os.path.join(os.getcwd(),'unzip')
+    kostra_118111 = get_kostra_by_index_rc(Kostra_raw_path,118111, 'pythonProject\\')
 
 
