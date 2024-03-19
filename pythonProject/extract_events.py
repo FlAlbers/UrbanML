@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 
 
 def extract_events(P_events, P_series, save_folder):
-
-
     # Convert date in P_FMO to datetime
     first_col = P_series.columns[0]
     P_series[first_col] = pd.to_datetime(P_series[first_col])
@@ -44,10 +42,10 @@ if __name__ == '__main__':
     P_events_sort = P_events.sort_values('hN_mm')
 
     # select 50 highest hN_mm
-    P_events_sort = P_events.reset_index(drop=True)
+    P_events_sort = P_events_sort.reset_index(drop=True)
 
-    n_events = [5,10,15,25,45]
-    distribution = [0, 0.30, 0.55, 0.75, 0.9, 1]
+    n_events = [5,15,20,25,35]
+    distribution = [0, 0.40, 0.70, 0.90, 0.975, 1]
 
     P_sample = pd.DataFrame()
     for i in range(len(n_events)):
@@ -55,33 +53,12 @@ if __name__ == '__main__':
         selected_events = P_events_sort[(P_events.index >= len(P_events) * distribution[i]) & (P_events.index < len(P_events) * distribution[i+1])]
 
         # Select a sample from selected_events
-        P_sample = pd.concat([P_sample, selected_events.sample(n_events[i], random_state=1).sort_values('hN_mm')])
+        P_sample = pd.concat([P_sample, selected_events.sample(n_events[i], random_state=2).sort_values('hN_mm')])
 
     print(P_sample)
 
     P_sample = P_sample.reset_index(drop=True)
     
-#####################
-    n_events = [33,33,34]
-    distribution = [0, 0.20, 0.40, 1]
-
-    P_sample = pd.DataFrame()
-    for i in range(len(n_events)):
-        # Select data from P_events based on index range
-        selected_events = P_events_sort[(P_events["hN_mm"] >= P_events["hN_mm"].max() * distribution[i]) & (P_events["hN_mm"] < P_events["hN_mm"].max() * distribution[i+1])]
-
-        # Select a sample from selected_events
-        P_sample = pd.concat([P_sample, selected_events.sample(n_events[i], random_state=2).sort_values('hN_mm')])
-
-    print(len(P_sample))
-
-    P_sample = P_sample.reset_index(drop=True)
-
-
-
-
-
-
     # Plot index vs hN_mm
     plt.plot(P_sample.index, P_sample['hN_mm'])
     plt.xlabel('Index')
@@ -96,8 +73,33 @@ if __name__ == '__main__':
     plt.title('Index vs hN_mm')
     plt.show()
 
-    # Select data from P_events based on distribution
-    selected_events = P_events[P_events['distribution'] == 'normal']
-
-
     extract_events(events_path, P_path, save_folder)
+
+
+#####################
+    n_events = [33,33,34]
+    distribution = [0, 0.05, 0.10, 1]
+
+    P_sample = pd.DataFrame()
+    for i in range(len(n_events)):
+        # Select data from P_events based on index range
+        selected_events = P_events_sort[(P_events["hN_mm"] >= P_events["hN_mm"].max() * distribution[i]) & (P_events["hN_mm"] < P_events["hN_mm"].max() * distribution[i+1])]
+
+        # Select a sample from selected_events
+        P_sample = pd.concat([P_sample, selected_events.sample(n_events[i], random_state=1).sort_values('hN_mm')])
+
+    print(len(P_sample))
+
+    # P_sample = P_sample.reset_index(drop=True)
+
+
+    # Plot index vs hN_mm
+    plt.plot(P_sample.index, P_sample['hN_mm'])
+    plt.xlabel('Index')
+    plt.ylabel('hN_mm')
+    plt.title('Index vs hN_mm')
+    plt.show()
+
+
+
+

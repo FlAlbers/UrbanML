@@ -33,8 +33,8 @@ for value in attrib:
     request = DwdObservationRequest(
         parameter=[value],
         resolution= "minute_5",
-        start_date="2019-01-01",
-        end_date="2024-01-01",
+        start_date="2014-01-01",
+        end_date="2019-01-01",
         settings=settings
     ).filter_by_station_id(station_id=1766)
 
@@ -51,9 +51,10 @@ for value in attrib:
         values = values.merge(paramValues[['date', value]], on='date', how='outer')
     paramValues = paramValues.drop(columns=value)
 
+
 # export to csv
 values.set_index('date', inplace=True)
-values.to_csv('pythonProject\\P_FMO.csv',index="date")
+values.to_csv('pythonProject\\P_FMO2.csv',index="date")
 
 
 
