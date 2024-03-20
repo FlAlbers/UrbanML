@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # Order data in P_events by hN_mm
     P_events_sort = P_events.sort_values('hN_mm')
 
-    # select 50 highest hN_mm
+    # reset index of P_events_sort
     P_events_sort = P_events_sort.reset_index(drop=True)
 
     n_events = [5,15,20,25,35]
