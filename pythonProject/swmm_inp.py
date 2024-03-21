@@ -15,6 +15,7 @@ from swmm_api.input_file.sections.others import RainGage
 
 from swmm_api.input_file.sections import Timeseries
 from swmm_api.input_file.sections.others import TimeseriesData, TimeseriesFile
+import multiprocessing
 
 # helper function to get euler model rain series from kostra table
 def get_euler_ts(kostra_data, return_period, duration, interval = 5, euler_typ = 2, start_time = '2024-01-01 00:00'):
@@ -83,6 +84,9 @@ TSnameKostra = 'Kostra'
 TSnameEvent = 'FMO'
 # Time interval of the time series in minutes
 TSinterval = 5
+# amount of cpu cores in the system
+cpu_cores = multiprocessing.cpu_count()
+
 # read base inp file
 inp_base = swmm_api.read_inp_file('pythonProject\\swmm_Gievenbeck.inp')
 
@@ -94,6 +98,9 @@ inp_base['OPTIONS'].update({'REPORT_START_DATE': start_time.date()})
 inp_base['OPTIONS'].update({'REPORT_START_TIME': start_time.time()})
 inp_base['OPTIONS'].update({'END_DATE': end_time.date()})
 inp_base['OPTIONS'].update({'END_TIME': end_time.time()})
+inp_base['OPTIONS'].update({'THREADS': cpu_cores})
+
+
 
 # get all euler model rain series for all return periods and durations
 for j in jaerlichkeiten:
@@ -106,18 +113,19 @@ for j in jaerlichkeiten:
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}.inp'))
 
 
-# Create inp-files with selected rainevents
-inp = inp_base
+del inp[sections.TIMESERIES][TSnameKostra]
+del inp['RAINGAGES'][TSnameKostra]
 folder_path = 'pythonProject\\events_FMO'
 for file_name in os.listdir(folder_path):
     if file_name.endswith('.csv'):
         
         file_path = os.path.join(folder_path, file_name)
         event_data = pd.read_csv(file_path)
-        inp = event_to_inp(inp_base, event_data, start_time=start_time + buffer_time, TSname=TSnameEvent)
+        inp = event_to_inp(inp, event_data, start_time=start_time + buffer_time, TSname=TSnameEvent)
         for subcatchment in inp['SUBCATCHMENTS']:
             inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameEvent
         file_name = file_name.replace('.csv', '')
+        file_name = file_name.replace('.', ' ')
         inp['TITLE'] = f'{name_place}_{file_name}'
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_{file_name}.inp'))
 
