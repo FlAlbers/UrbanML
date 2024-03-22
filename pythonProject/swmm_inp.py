@@ -42,6 +42,7 @@ def euler_to_inp(SWMM_inp,kostra_data, return_period, duration, interval = 5, eu
     SWMM_inp['RAINGAGES'][TSname] = RainGage(TSname, 'VOLUME', interval, 1 ,'TIMESERIES', TSname)
     return SWMM_inp
 
+# helper function to add measured rain series to inp file
 def event_to_inp(SWMM_inp, event_data, start_time='2024-01-01 00:00', interval=5 , TSname='Event'):
     event_data['date'] = pd.to_datetime(event_data['date'])
     event_data['date'] = event_data['date'].apply(lambda x: start_time + pd.Timedelta(minutes=(x - event_data['date'].iloc[0]).total_seconds() / 60))
