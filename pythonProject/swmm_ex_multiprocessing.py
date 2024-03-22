@@ -1,4 +1,9 @@
-## Test this code from https://github.com/pyswmm/pyswmm/issues/222
+"""
+Author: Flemming Albers
+Script to run SWMM simulations in parallel using multiprocessing.
+To use this script only the 'folder_path' is needed that points to the directory containing the SWMM input files.
+"""
+
 import os
 import pyswmm
 import multiprocessing as mp
@@ -6,6 +11,15 @@ from multiprocessing import Lock
 import time
 
 def worker(swmm_filename):
+    """
+    Executes a SWMM simulation for a given SWMM input file.
+    Output and report file will be generated in the same directory as the input file.
+
+    Args:
+        swmm_filename (str): The path to the SWMM input file.
+    Returns:
+        None
+    """
     lock = Lock()
     lock.acquire()
     try:
@@ -21,7 +35,11 @@ def worker(swmm_filename):
     finally:
         lock.release()
 
-def main():
+def main(folder_path):
+    """
+    Main function that executes the SWMM simulations in parallel using multiprocessing.
+    """
+    total_start_time = time.time()
     inp_files = [os.path.join(folder_path, file_name) for file_name in os.listdir(folder_path) if file_name.endswith('.inp')]
     with mp.Pool(processes=mp.cpu_count()) as pool:
         pool.map(worker, inp_files)
@@ -32,7 +50,5 @@ def main():
     print("All done")
 
 if __name__ == '__main__':
-    total_start_time = time.time()
     folder_path = 'pythonProject\\inp'
-    os.getcwd()
-    main()
+    main(folder_path)

@@ -1,5 +1,38 @@
-#generieren von allen inp files für die simulation von modellregen
-# + normale Niederschlagsereignisse
+"""
+Author: Flemming Albers
+
+This script generates inp files for swmm-simulations of model rain and normal rainfall events.
+The script reads a base inp file, which contains the initial configuration of the SWMM model.
+It then generates multiple inp files by adding different rain series to the base inp file.
+
+The script requires the following input parameters:
+- base_inp_path: Path to the base inp file.
+- event_data_path: Path to the folder containing the rain event data.
+- kostra_data_path: Path to the Kostra data file.
+- max_duration: Maximum duration time (in minutes) for Kostra data.
+- name_place: Name of the study area.
+- save_inp_path: Path to save the generated inp files.
+- euler_typ: Euler type for Kostra data.
+- start_time: Start time of the simulation.
+- buffer_time: Buffer time before and after the rainfall event.
+- TSnameKostra: Name of the Kostra time series to be included in the inp file.
+- TSnameEvent: Name of the measured time series to be included in the inp file.
+- TSinterval: Time interval of the time series in minutes.
+
+The script performs the following steps:
+1. Reads the Kostra data from the specified file.
+2. Reads the base inp file.
+3. Updates the OPTIONS section of the inp file with the specified start time, end time, and number of CPU cores.
+4. Generates inp files for different combinations of return periods and durations.
+    - For each combination, it adds the Kostra rain series to the inp file.
+    - Updates the rain gauge for each subcatchment in the inp file.
+    - Writes the modified inp file to the specified save path.
+5. Generates inp files for each measured rain event in the specified event data folder.
+    - For each event, it adds the measured rain series to the inp file.
+    - Updates the rain gauge for each subcatchment in the inp file.
+    - Writes the modified inp file to the specified save path.
+"""
+
 import os
 from io import StringIO
 import pandas as pd
@@ -140,21 +173,3 @@ for file_name in os.listdir(event_data_path):
         file_name = file_name.replace('.', ' ')
         inp['TITLE'] = f'{name_place}_{file_name}'
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_{file_name}.inp'))
-
-# inp = inp_base
-# folder_path = 'pythonProject\\events_FMO'      
-# file_path = os.path.join(folder_path, '2014-02-01 07 20 00_hN1.56.csv')
-# event_data = pd.read_csv(file_path)
-# for subcatchment in inp['SUBCATCHMENTS']:
-#     inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameEvent
-# inp = event_to_inp(inp_base, event_data, start_time=start_time + buffer_time, TSname=TSnameEvent)
-
-# inp.write_file(os.path.join(save_inp_path,'2014-02-01 07 20 00_hN1.56.inp'))
-
-# event_data = event_data.set_index('date')
-# TimeseriesData(TSnameEvent, data=list(zip(event_data.index, event_data['precipitation_height'])))
-# inp[sections.TIMESERIES][TSnameEvent] = TimeseriesData(TSnameEvent, data=list(zip(event_data.index, event_data['precipitation_height'])))
-
-# inp[sections.TIMESERIES][TSnameEvent]
-# inp_base['TITLE']
-# gievenbeck = swmm_api.read_inp_file('pythonProject\\swmm_Gievenbeck.inp')
