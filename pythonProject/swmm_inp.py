@@ -1,6 +1,5 @@
 #generieren von allen inp files für die simulation von modellregen
 # + normale Niederschlagsereignisse
-# hinterlegen an alle flächen
 import os
 from io import StringIO
 import pandas as pd
@@ -17,6 +16,65 @@ from swmm_api.input_file.sections import Timeseries
 from swmm_api.input_file.sections.others import TimeseriesData, TimeseriesFile
 import multiprocessing
 
+# get current path of working directory
+current_path = os.getcwd()
+
+###########################################################################################################
+# Input section
+## Input parameters for inp file generation
+base_inp_path = 'pythonProject\\swmm_Gievenbeck.inp'
+# path to folder with rain event data
+event_data_path = 'pythonProject\\events_FMO'
+# path to kostra data
+kostra_data_path = os.path.join(current_path, 'pythonProject\\kostra_118111.csv')
+# set maximum duration time [min] for Kostra data
+max_duration = 72*60
+# Name of the study area
+name_place = 'Gievenbeck'
+# Path to save the inp files
+save_inp_path = os.path.join(current_path, 'pythonProject\\inp')
+# Euler type for Kostra data (2 is standard)
+euler_typ = 2
+# Start time of the simulation
+start_time = pd.to_datetime('2024-01-01 00:00')
+# Buffer time before and after the rainfall event
+buffer_time = pd.Timedelta('2h')
+# Name of the Kostra time series to be included in the inp file
+TSnameKostra = 'Kostra'
+# Name of the measured time series to be included in the inp file
+TSnameEvent = 'FMO'
+# Time interval of the time series in minutes
+TSinterval = 5
+# amount of cpu cores in the system
+cpu_cores = multiprocessing.cpu_count()
+
+# End of input section
+############################################################################################################
+
+########################
+# read kostra data
+kostra = pd.read_csv(kostra_data_path, delimiter=',', index_col=0)
+# get return preiods and durations from kostra table
+returnrate = kostra.columns.astype(int)
+# duration needs to be larger than 15min
+durations = kostra.index[(kostra.index >= 15) & (kostra.index <= max_duration)]
+# calculate end time of the simulation with start time and buffer time
+end_time = start_time + pd.Timedelta(minutes=int(max(durations))) + buffer_time * 2
+
+########################
+# read base inp file
+inp_base = swmm_api.read_inp_file(base_inp_path)
+# Update OPTIONS of inp file
+inp_base['OPTIONS'].update({'START_DATE': start_time.date()})
+inp_base['OPTIONS'].update({'START_TIME': start_time.time()})
+inp_base['OPTIONS'].update({'REPORT_START_DATE': start_time.date()})
+inp_base['OPTIONS'].update({'REPORT_START_TIME': start_time.time()})
+inp_base['OPTIONS'].update({'END_DATE': end_time.date()})
+inp_base['OPTIONS'].update({'END_TIME': end_time.time()})
+inp_base['OPTIONS'].update({'THREADS': cpu_cores})
+
+############################################################################################################
+# helper functions
 # helper function to get euler model rain series from kostra table
 def get_euler_ts(kostra_data, return_period, duration, interval = 5, euler_typ = 2, start_time = '2024-01-01 00:00'):
     # kostra = pd.read_csv(kostra_data_path, delimiter=',', index_col=0)
@@ -39,7 +97,7 @@ def euler_to_inp(SWMM_inp,kostra_data, return_period, duration, interval = 5, eu
     euler2.name = TSname
     # input[sections.TIMESERIES].add_obj(TimeseriesData(name, data=list(zip(euler2.index,euler2))))
     SWMM_inp[sections.TIMESERIES][TSname] =  TimeseriesData(TSname, data=list(zip(euler2.index,euler2)))
-    SWMM_inp['RAINGAGES'][TSname] = RainGage(TSname, 'VOLUME', interval, 1 ,'TIMESERIES', TSname)
+    SWMM_inp['RAINGAGES'][TSname] = RainGage(TSname, 'VOLUME', TSinterval_time, 1 ,'TIMESERIES', TSname)
     return SWMM_inp
 
 # helper function to add measured rain series to inp file
@@ -55,57 +113,11 @@ def event_to_inp(SWMM_inp, event_data, start_time='2024-01-01 00:00', interval=5
     SWMM_inp['RAINGAGES'][TSname] = RainGage(TSname, 'VOLUME', TSinterval_time, 1 ,'TIMESERIES', TSname)
     return SWMM_inp
 
-# get current path of working directory
-current_path = os.getcwd()
-
-
-## Input parameters for inp file generation
-# path to kostra data
-kostra_data_path = os.path.join(current_path, 'pythonProject\\kostra_118111.csv')
-# read kostra data
-kostra = pd.read_csv(kostra_data_path, delimiter=',', index_col=0)
-# get return preiods and durations from kostra table
-jaerlichkeiten = kostra.columns.astype(int)
-# duration needs to be larger than 15min
-dauern = kostra.index[kostra.index >= 15]
-# Name of the study area
-name_place = 'Gievenbeck'
-# Path to save the inp files
-save_inp_path = os.path.join(current_path, 'pythonProject\\inp')
-# Euler type for Kostra data
-euler_typ = 2
-# Start time of the simulation
-start_time = pd.to_datetime('2024-01-01 00:00')
-# Buffer time before and after the rainfall event
-buffer_time = pd.Timedelta('2h')
-end_time = start_time + pd.Timedelta(minutes=int(max(dauern))) + buffer_time * 2
-# Name of the Kostra time series to be included in the inp file
-TSnameKostra = 'Kostra'
-# Name of the measured time series to be included in the inp file
-TSnameEvent = 'FMO'
-# Time interval of the time series in minutes
-TSinterval = 5
-# amount of cpu cores in the system
-cpu_cores = multiprocessing.cpu_count()
-
-# read base inp file
-inp_base = swmm_api.read_inp_file('pythonProject\\swmm_Gievenbeck.inp')
-
-
-# Update OPTIONS of inp file
-inp_base['OPTIONS'].update({'START_DATE': start_time.date()})
-inp_base['OPTIONS'].update({'START_TIME': start_time.time()})
-inp_base['OPTIONS'].update({'REPORT_START_DATE': start_time.date()})
-inp_base['OPTIONS'].update({'REPORT_START_TIME': start_time.time()})
-inp_base['OPTIONS'].update({'END_DATE': end_time.date()})
-inp_base['OPTIONS'].update({'END_TIME': end_time.time()})
-inp_base['OPTIONS'].update({'THREADS': cpu_cores})
-
-
-
+################################################################################################################
+# create inp files
 # get all euler model rain series for all return periods and durations
-for j in jaerlichkeiten:
-    for d in dauern:
+for j in returnrate:
+    for d in durations:
         inp = inp_base
         inp['TITLE'] = f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}' 
         inp = euler_to_inp(inp,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time=start_time + buffer_time, TSname=TSnameKostra)
@@ -116,11 +128,10 @@ for j in jaerlichkeiten:
 
 del inp[sections.TIMESERIES][TSnameKostra]
 del inp['RAINGAGES'][TSnameKostra]
-folder_path = 'pythonProject\\events_FMO'
-for file_name in os.listdir(folder_path):
+for file_name in os.listdir(event_data_path):
     if file_name.endswith('.csv'):
         
-        file_path = os.path.join(folder_path, file_name)
+        file_path = os.path.join(event_data_path, file_name)
         event_data = pd.read_csv(file_path)
         inp = event_to_inp(inp, event_data, start_time=start_time + buffer_time, TSname=TSnameEvent)
         for subcatchment in inp['SUBCATCHMENTS']:

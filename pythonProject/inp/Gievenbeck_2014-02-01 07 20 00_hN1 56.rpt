@@ -21,7 +21,7 @@
   Flow Routing Method ...... DYNWAVE
   Surcharge Method ......... SLOT
   Starting Date ............ 01/01/2024 00:00:00
-  Ending Date .............. 01/08/2024 04:00:00
+  Ending Date .............. 01/04/2024 04:00:00
   Antecedent Dry Days ...... 14.0
   Report Time Step ......... 00:01:00
   Wet Time Step ............ 00:01:00
@@ -422,6 +422,6 @@
   No conduits were surcharged.
   
 
-  Analysis begun on:  Thu Mar 21 16:36:33 2024
-  Analysis ended on:  Thu Mar 21 16:36:41 2024
-  Total elapsed time: 00:00:08
+  Analysis begun on:  Fri Mar 22 15:54:30 2024
+  Analysis ended on:  Fri Mar 22 15:54:37 2024
+  Total elapsed time: 00:00:07
