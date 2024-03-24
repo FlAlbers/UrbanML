@@ -14,10 +14,11 @@ def extract_events(P_events, P_series, save_folder):
     P_events['start'] = pd.to_datetime(P_events['start'])
     P_events['end'] = pd.to_datetime(P_events['end'])
 
+    
     # test start and end
-    start = P_events['start']
-    end = P_events['end']
-    hN = P_events['hN_mm']
+    start = pd.to_datetime(P_events['start'].values.flatten())
+    end = pd.to_datetime(P_events['end'].values.flatten())
+    hN = P_events['hN_mm'].values.flatten()
 
     # Iterate through all events
     for i in range(len(start)):
@@ -38,7 +39,7 @@ def extract_events(P_events, P_series, save_folder):
 if __name__ == '__main__':
     events_path = '02_input_data\\events_FMO.csv'
     P_path = '02_input_data\\P_FMO.csv'
-    save_folder = '02_input_data\\events_FMO'
+    save_folder = '03_sim_data\\quick_sim'
 
     P_events = pd.read_csv(events_path)
     P_series = pd.read_csv(P_path)
@@ -46,5 +47,5 @@ if __name__ == '__main__':
     P_events_sample = P_events.sample(10, random_state=1)
 
     # test extract_events with 10 random samples
-    extract_events(events_path, P_path, save_folder)
+    extract_events(P_events_sample, P_series, save_folder)
 

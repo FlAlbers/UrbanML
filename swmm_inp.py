@@ -112,7 +112,7 @@ for j in returnrate:
             inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameKostra        
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}.inp'))
 
-
+inp = inp_base
 del inp[sections.TIMESERIES][TSnameKostra]
 del inp['RAINGAGES'][TSnameKostra]
 for file_name in os.listdir(event_data_path):
