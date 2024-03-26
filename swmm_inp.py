@@ -107,9 +107,10 @@ for j in returnrate:
     for d in durations:
         inp = inp_base
         inp['TITLE'] = f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}' 
-        inp = euler_to_inp(inp,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time=start_time + buffer_time, TSname=TSnameKostra)
+        inp = euler_to_inp(inp,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time=start_time, TSname=TSnameKostra, buffer_time = buffer_time)
         for subcatchment in inp['SUBCATCHMENTS']:
-            inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameKostra        
+            inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameKostra
+        inp[sections.TIMESERIES][TSnameKostra]
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}.inp'))
 
 inp = inp_base
@@ -117,13 +118,13 @@ del inp[sections.TIMESERIES][TSnameKostra]
 del inp['RAINGAGES'][TSnameKostra]
 for file_name in os.listdir(event_data_path):
     if file_name.endswith('.csv'):
-        
         file_path = os.path.join(event_data_path, file_name)
         event_data = pd.read_csv(file_path)
-        inp = event_to_inp(inp, event_data, start_time=start_time + buffer_time, TSname=TSnameEvent)
+        inp = event_to_inp(inp, event_data, start_time=start_time, TSname=TSnameEvent, buffer_time = buffer_time)
         for subcatchment in inp['SUBCATCHMENTS']:
             inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameEvent
         file_name = file_name.replace('.csv', '')
         file_name = file_name.replace('.', ' ')
         inp['TITLE'] = f'{name_place}_{file_name}'
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_{file_name}.inp'))
+

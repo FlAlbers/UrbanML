@@ -27,9 +27,10 @@ def get_euler_ts(kostra_data, return_period, duration, interval = 5, euler_typ =
     return ts
 
 # helper function to add euler model rain series to inp file
-def euler_to_inp(SWMM_inp,kostra_data, return_period, duration, interval = 5, euler_typ = None, start_time = '',TSname = 'Kostra'):
+def euler_to_inp(SWMM_inp,kostra_data, return_period, duration, interval = 5, euler_typ = None, start_time = '2024-01-01 00:00',TSname = 'Kostra', buffer_time = pd.Timedelta('2h')):
+    start_time = start_time + buffer_time
     euler2 = get_euler_ts(kostra_data, return_period=return_period, duration=duration, interval=interval, euler_typ=euler_typ, start_time=start_time)
-    # Convert TSinterval to swmm format 
+    # Convert TSinterval to swmm format
     if interval >= 10:
         TSinterval_time = f'0:{interval}'
     else:
@@ -38,17 +39,24 @@ def euler_to_inp(SWMM_inp,kostra_data, return_period, duration, interval = 5, eu
     # input[sections.TIMESERIES].add_obj(TimeseriesData(name, data=list(zip(euler2.index,euler2))))
     SWMM_inp[sections.TIMESERIES][TSname] =  TimeseriesData(TSname, data=list(zip(euler2.index,euler2)))
     SWMM_inp['RAINGAGES'][TSname] = RainGage(TSname, 'VOLUME', TSinterval_time, 1 ,'TIMESERIES', TSname)
+    end_time = start_time + pd.Timedelta(minutes=int(duration)) + buffer_time * 2
+    SWMM_inp['OPTIONS'].update({'END_DATE': end_time.date()})
+    SWMM_inp['OPTIONS'].update({'END_TIME': end_time.time()})
     return SWMM_inp
 
 # helper function to add measured rain series to inp file
-def event_to_inp(SWMM_inp, event_data, start_time='2024-01-01 00:00', interval=5 , TSname='Event'):
+def event_to_inp(SWMM_inp, event_data, start_time='2024-01-01 00:00', interval=5 , TSname='Event', buffer_time = pd.Timedelta('2h')):
     event_data['date'] = pd.to_datetime(event_data['date'])
-    event_data['date'] = event_data['date'].apply(lambda x: start_time + pd.Timedelta(minutes=(x - event_data['date'].iloc[0]).total_seconds() / 60))
+    event_data['date'] = event_data['date'].apply(lambda x: start_time + buffer_time + pd.Timedelta(minutes=(x - event_data['date'].iloc[0]).total_seconds() / 60))
     SWMM_inp[sections.TIMESERIES][TSname] = TimeseriesData(TSname, data=list(zip(event_data['date'], event_data['precipitation_height'])))
     #Convert TSinterval to swmm format 
     if interval >= 10:
         TSinterval_time = f'0:{interval}'
     else:
         TSinterval_time = f'0:0{interval}'
+    
+    end_time = max(event_data['date']) + buffer_time
+    SWMM_inp['OPTIONS'].update({'END_DATE': end_time.date()})
+    SWMM_inp['OPTIONS'].update({'END_TIME': end_time.time()})
     SWMM_inp['RAINGAGES'][TSname] = RainGage(TSname, 'VOLUME', TSinterval_time, 1 ,'TIMESERIES', TSname)
     return SWMM_inp
