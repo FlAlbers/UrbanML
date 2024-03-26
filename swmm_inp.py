@@ -48,7 +48,7 @@ current_path = os.getcwd()
 ###########################################################################################################
 # Input section
 ## Input parameters for inp file generation
-base_inp_path = '03_sim_data\\swmm_Gievenbeck.inp'
+base_inp_path = '03_sim_data\\Gievenbeck_20240325.inp'
 # path to folder with rain event data
 event_data_path = '02_input_data\\events_FMO'
 # path to kostra data

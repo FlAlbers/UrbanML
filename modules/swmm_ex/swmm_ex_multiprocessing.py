@@ -50,5 +50,5 @@ def swmm_mp(folder_path):
     print("All done")
 
 if __name__ == '__main__':
-    folder_path = '03_sim_data\\inp'
+    folder_path = '03_sim_data\\sim_test'
     swmm_mp(folder_path)
