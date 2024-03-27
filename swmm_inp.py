@@ -73,6 +73,8 @@ TSnameEvent = 'FMO'
 TSinterval = 5
 # amount of cpu cores in the system
 cpu_cores = multiprocessing.cpu_count()
+# slect if subcatchment values should be reported TRUE or FALSE
+report_subcatchments = False
 
 # End of input section
 ############################################################################################################
@@ -98,6 +100,8 @@ inp_base['OPTIONS'].update({'REPORT_START_TIME': start_time.time()})
 inp_base['OPTIONS'].update({'END_DATE': end_time.date()})
 inp_base['OPTIONS'].update({'END_TIME': end_time.time()})
 inp_base['OPTIONS'].update({'THREADS': cpu_cores})
+if not report_subcatchments:
+    del inp_base[sections.REPORT]['SUBCATCHMENTS']
 
 
 ################################################################################################################
@@ -110,7 +114,6 @@ for j in returnrate:
         inp = euler_to_inp(inp,kostra, return_period=j, duration=d, interval=5, euler_typ=euler_typ, start_time=start_time, TSname=TSnameKostra, buffer_time = buffer_time)
         for subcatchment in inp['SUBCATCHMENTS']:
             inp['SUBCATCHMENTS'][subcatchment].rain_gage = TSnameKostra
-        inp[sections.TIMESERIES][TSnameKostra]
         inp.write_file(os.path.join(save_inp_path,f'{name_place}_e{euler_typ}_T{int(j)}D{int(d)}.inp'))
 
 inp = inp_base
