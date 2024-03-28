@@ -18,7 +18,6 @@ The script performs the following steps:
 !!!If you want to request more data, you can request the data in smaller time periods and merge the results.
 """
 
-
 import pandas as pd
 import wetterdienst as wd
 from datetime import datetime
