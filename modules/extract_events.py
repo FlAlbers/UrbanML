@@ -1,21 +1,32 @@
+
+"""
+    Author: Flemming Albers
+    Extracts rainevents from a given timeseries based on start and end dates.
+    Extracted events are saved as CSV files in a specified folder.
+
+    Args:
+        P_events (DataFrame): DataFrame containing event information with 'start'and 'end' of the event.
+        P_series (DataFrame): DataFrame containing time series of precipitation data.
+        save_folder (str): Path to the folder where the extracted event files will be saved.
+
+    """
+
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-
-
 def extract_events(P_events, P_series, save_folder):
-    # Convert date in P_FMO to datetime
+    
+    # Convert date in P_series to datetime
     first_col = P_series.columns[0]
     P_series[first_col] = pd.to_datetime(P_series[first_col])
     P_series[first_col] = P_series[first_col].dt.tz_localize(None)
 
-    # Convert start and end in events_FMO to datetime
+    # Convert start and end in P_events to datetime
     P_events['start'] = pd.to_datetime(P_events['start'])
     P_events['end'] = pd.to_datetime(P_events['end'])
 
-    
-    # test start and end
+    # Extract events
     start = pd.to_datetime(P_events['start'].values.flatten())
     end = pd.to_datetime(P_events['end'].values.flatten())
     hN = P_events['hN_mm'].values.flatten()
@@ -36,6 +47,8 @@ def extract_events(P_events, P_series, save_folder):
         print(f'Event {start[i]} saved to {save_folder}\\{start_name}_hN{hN[i]}.csv')
 
 
+
+#Code for Testing function
 if __name__ == '__main__':
     events_path = '02_input_data\\events_FMO.csv'
     P_path = '02_input_data\\P_FMO.csv'
@@ -46,6 +59,6 @@ if __name__ == '__main__':
 
     P_events_sample = P_events.sample(10, random_state=1)
 
-    # test extract_events with 10 random samples
+    # Test extract_events with 10 random samples
     extract_events(P_events_sample, P_series, save_folder)
 

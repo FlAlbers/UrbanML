@@ -4,16 +4,14 @@
 # pyswmm api documentation
 # https://pyswmm.github.io/pyswmm/reference/
 
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from pyswmm import Nodes, Links, Output, NodeSeries, SystemSeries
-import os
-import pandas as pd
-
 #test_path = '03_sim_data\\sim_test\\Gievenbeck_2014-05-23 07 30 00_hN7 01.out'
 
-# extract simulation data from .out files
+
 '''
+Author: Flemming Albers
+
+Extract simulation data from .out files
+
 Parameters:
     - folder_path: path to the folder containing the .out files
     - node: node name
@@ -28,6 +26,15 @@ Edited Dataoutput:
  - New col Duration [min] for elapsed time of event
 
 '''
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from pyswmm import Nodes, Links, Output, NodeSeries, SystemSeries
+import os
+import pandas as pd
+
+
+
 def single_node(folder_path, node = 'R0019769', resample = '1min'):
     sims_data = []
     for file_name in os.listdir(folder_path):
