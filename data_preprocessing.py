@@ -14,14 +14,22 @@ import pandas as pd
 from modules.extract_sim_data import single_node
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error , mean_absolute_error
+from keras.models import Sequential, model_from_json
+from keras.layers import Dense
+from keras.layers import LSTM
+import matplotlib.pyplot as plt
+from matplotlib import pyplot
+import tensorflow as tf
 
 folder_path = '03_sim_data\\inp'
 sims_data = single_node(folder_path, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
+random_seed = 42
 # Splitting data into train and test sets
-train_data, test_data = train_test_split(sims_data, test_size=0.2, random_state=42)
+train_data, test_data = train_test_split(sims_data, test_size=0.2, random_state=random_seed)
 
 '''
 Window parameters:
@@ -84,28 +92,71 @@ def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             out_data = np.append(out_data, out_sample[out_slice, :], axis=0)
     return in_data, out_data
 
-in_train, out_train = sequence_data(train_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, 
+
+in_vars=['duration', 'p']
+out_vars=['Q_out']
+x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-print(out_train.shape)
-print(in_train.shape)
+print(x_train.shape)
+print(y_train.shape)
 
 
-in_test, out_test = sequence_data(test_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, 
+x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-print(out_test.shape)
-print(in_test.shape)
+print(x_test.shape)
+print(y_test.shape)
+
+
+# Design network
+model = Sequential()
+model.add(LSTM(10, input_shape=(lag, len(in_vars))))
+model.add(Dense(1))
+model.compile(loss='mae', optimizer='adam')
+
+# Fit network
+lstm = model.fit(x_train, y_train,
+epochs=60,
+batch_size=10,
+validation_data=(x_test, y_test),
+verbose=2,
+shuffle=False)
+
+
+pyplot.plot(lstm.history['loss'], '--', label='train loss')
+pyplot.plot(lstm.history['val_loss'], label='test loss')
+pyplot.legend()
+pyplot.show()
+
+
+# serialize model to JSON
+model_json = model.to_json()
+with open("Gievenbeck_SingleNode_LSTM_20240328.json", "w") as json_file:
+    json_file.write(model_json)
+# serialize weights to HDF5
+model.save_weights("Gievenbeck_SingleNode_LSTM_20240328.weights.h5")
+print("Saved model to disk")
+
+# load json and create model
+json_file = open('Gievenbeck_SingleNode_LSTM_20240328.json', 'r')
+loaded_model_json = json_file.read()
+json_file.close()
+loaded_model = model_from_json(loaded_model_json)
+# load weights into new model
+loaded_model.load_weights("Gievenbeck_SingleNode_LSTM_20240328.weights.h5")
+print("Loaded model from disk")
+
 
 
 ####################################################
 # test area
-view5 = sims_data[1][1]
-view1 = test[1][1]
+# view5 = sims_data[1][1]
+# view1 = test[1][1]
 
-view1[(view1.index >= '2024-01-01 07:30:00') & (view1.index <= '2024-01-01 07:40:00')]
-view5[(view5.index >= '2024-01-01 07:30:00') & (view5.index <= '2024-01-01 07:40:00')]
+# view1[(view1.index >= '2024-01-01 07:30:00') & (view1.index <= '2024-01-01 07:40:00')]
+# view5[(view5.index >= '2024-01-01 07:30:00') & (view5.index <= '2024-01-01 07:40:00')]
 
-mean_sims_data = np.mean(sims_data[1][1])
-mean_test = np.mean(test[1][1])
+# mean_sims_data = np.mean(sims_data[1][1])
+# mean_test = np.mean(test[1][1])
 
 
 
