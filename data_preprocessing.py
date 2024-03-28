@@ -35,14 +35,14 @@ Q_out = total_inflow [m³/s]
 p = rainfall [mm/h]
 '''
 
-############ Fitting scaler for Normalization of data
+############ Fitting scalers for Normalization of data
 # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
 in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in sims_data], axis=0))
 out_concat  = np.array(pd.concat([sample[1][['Q_out']] for sample in sims_data], axis=0))
 
+# Fitting the scalers for in and out data
 in_scaler = MinMaxScaler(feature_range=(0, 1))
 out_scaler = MinMaxScaler(feature_range=(0, 1))
-
 in_scaler = in_scaler.fit(in_concat)
 out_scaler = out_scaler.fit(out_concat)
 
@@ -53,10 +53,16 @@ out_scaler = out_scaler.fit(out_concat)
 # sum(out_norm[:,0])
 # sum(out_back[:,0])
 
+lag = int(3 * 60 / 5)
+delay = 3
+p_steps = 5
 
-def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None):
+def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12):
     in_data = np.array([])
     out_data = np.array([])
+    l = lag
+    d = delay
+    n = prediction_steps
 
     for sample in sims_data:
         in_sample = np.array(sample[1][in_vars])
@@ -64,12 +70,8 @@ def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
         in_sample = in_scaler.transform(in_sample)
         out_sample = out_scaler.transform(out_sample)
 
-        l = int(3 * 60 / 5)
-        d = 3
-        n = 5
-
         N = in_sample.shape[0]
-        k = N - (l + d + n)
+        k = N - (lag + delay + prediction_steps)
 
         in_slice = np.array([range(i, i + l) for i in range(k)])
         out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
@@ -80,15 +82,16 @@ def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
         else:
             in_data = np.append(in_data, in_sample[in_slice, :], axis=0)
             out_data = np.append(out_data, out_sample[out_slice, :], axis=0)
-
     return in_data, out_data
 
-in_train, out_train = sequence_data(train_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, out_scaler=out_scaler)
+in_train, out_train = sequence_data(train_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, 
+                                    out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(out_train.shape)
 print(in_train.shape)
 
 
-in_test, out_test = sequence_data(test_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, out_scaler=out_scaler)
+in_test, out_test = sequence_data(test_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, 
+                                  out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(out_test.shape)
 print(in_test.shape)
 
