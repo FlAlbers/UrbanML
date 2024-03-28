@@ -13,11 +13,15 @@ import numpy as np
 import pandas as pd
 from modules.extract_sim_data import single_node
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 
 folder_path = '03_sim_data\\inp'
 sims_data = single_node(folder_path, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
+
+# Splitting data into train and test sets
+train_data, test_data = train_test_split(sims_data, test_size=0.2, random_state=42)
 
 '''
 Window parameters:
@@ -31,48 +35,62 @@ Q_out = total_inflow [m³/s]
 p = rainfall [mm/h]
 '''
 
-# sims_data = single_node(folder_path='03_sim_data\\sim_test', node= 'R0019769')
+############ Fitting scaler for Normalization of data
+# Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
+in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in sims_data], axis=0))
+out_concat  = np.array(pd.concat([sample[1][['Q_out']] for sample in sims_data], axis=0))
 
-in_data = np.array([])
-out_data = np.array([])
-for sample in sims_data:
-    # print(sample[1])
-    sample_in = np.array(sample[1][['duration','p']])
-    sample_out = np.array(sample[1][['Q_out']])
+in_scaler = MinMaxScaler(feature_range=(0, 1))
+out_scaler = MinMaxScaler(feature_range=(0, 1))
 
-    ###################################
-    '''
-    https://machinelearningmastery.com/how-to-scale-data-for-long-short-term-memory-networks-in-python/
-    https://machinelearningmastery.com/standardscaler-and-minmaxscaler-transforms-in-python/
-    standard scalar or normalize needed for LSTM
-    use MinMaxScaler for normalize 
-    '''
-    ######### windowing
-    # 3h
-    # l = 3h * 60 min / 5 min
-    l = int(3 * 60 / 5)
-    d = 3
-    n = 5
+in_scaler = in_scaler.fit(in_concat)
+out_scaler = out_scaler.fit(out_concat)
 
-    # Calculate Total number of sequences k from one sample 
-    N = sample_in.shape[0] 
-    k = N - (l + d + n)
-
-    # Preapare Input and output Slice
-    in_slice = np.array([range(i, i + l) for i in range(k)])
-    out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
-    
-    # Slice sequences from sample
-    if in_data.size == 0:
-        in_data = sample_in[in_slice,:]
-        out_data = sample_out[out_slice,:]
-    else:
-        in_data = np.append(in_data, sample_in[in_slice,:], axis=0)
-        out_data = np.append(out_data, sample_out[out_slice,:], axis=0)
-
-print(out_data.shape)
+### Scaler check if before and after is the same
+# out_norm = out_scaler.transform(out_concat)
+# out_back = out_scaler.inverse_transform(out_norm)
+# sum(out_concat[:,0])
+# sum(out_norm[:,0])
+# sum(out_back[:,0])
 
 
+def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None):
+    in_data = np.array([])
+    out_data = np.array([])
+
+    for sample in sims_data:
+        in_sample = np.array(sample[1][in_vars])
+        out_sample = np.array(sample[1][out_vars])
+        in_sample = in_scaler.transform(in_sample)
+        out_sample = out_scaler.transform(out_sample)
+
+        l = int(3 * 60 / 5)
+        d = 3
+        n = 5
+
+        N = in_sample.shape[0]
+        k = N - (l + d + n)
+
+        in_slice = np.array([range(i, i + l) for i in range(k)])
+        out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
+
+        if in_data.size == 0:
+            in_data = in_sample[in_slice, :]
+            out_data = out_sample[out_slice, :]
+        else:
+            in_data = np.append(in_data, in_sample[in_slice, :], axis=0)
+            out_data = np.append(out_data, out_sample[out_slice, :], axis=0)
+
+    return in_data, out_data
+
+in_train, out_train = sequence_data(train_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, out_scaler=out_scaler)
+print(out_train.shape)
+print(in_train.shape)
+
+
+in_test, out_test = sequence_data(test_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=in_scaler, out_scaler=out_scaler)
+print(out_test.shape)
+print(in_test.shape)
 
 
 ####################################################
