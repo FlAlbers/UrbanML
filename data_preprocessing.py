@@ -29,7 +29,10 @@ sims_data = single_node(folder_path, 'R0019769',resample = '5min')
 
 random_seed = 42
 # Splitting data into train and test sets
-train_data, test_data = train_test_split(sims_data, test_size=0.2, random_state=random_seed)
+train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
+
+# Splitting train data again into train and validation sets
+train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed)
 
 '''
 Window parameters:
@@ -92,7 +95,8 @@ def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             out_data = np.append(out_data, out_sample[out_slice, :], axis=0)
     return in_data, out_data
 
-
+#########################################################################
+# Use Sequence function to create x and y data for train and test
 in_vars=['duration', 'p']
 out_vars=['Q_out']
 x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
@@ -100,11 +104,21 @@ x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars,
 print(x_train.shape)
 print(y_train.shape)
 
+'''
+Include crossvalidation here to split the training data into training and validation data for crossvalidation
+https://scikit-learn.org/stable/modules/cross_validation.html
 
-x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+Maybe block chaining cross validation
+https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
+
+
+'''
+
+
+x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-print(x_test.shape)
-print(y_test.shape)
+print(x_val.shape)
+print(y_val.shape)
 
 
 # Design network
@@ -117,7 +131,7 @@ model.compile(loss='mae', optimizer='adam')
 lstm = model.fit(x_train, y_train,
 epochs=60,
 batch_size=10,
-validation_data=(x_test, y_test),
+validation_data=(x_val, y_val),
 verbose=2,
 shuffle=False)
 

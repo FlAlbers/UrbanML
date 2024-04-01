@@ -45,7 +45,7 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
                 
                 current_sim = pd.DataFrame({'Q_out': outfall_flow.values(), 'p': precip.values()}, index=outfall_flow.keys())
                 current_sim = current_sim.resample(resample, origin = 'end').mean()
-                current_sim = current_sim.resample(resample, origin='end').mean()
+                current_sim['duration'] = (current_sim.index - current_sim.index[0]).total_seconds() / 60
                 current_sim = current_sim[['duration', 'p', 'Q_out']]
                 sims_data.append((file_name, current_sim))
 
