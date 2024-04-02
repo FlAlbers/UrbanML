@@ -27,6 +27,7 @@ sims_data = single_node(folder_path, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
+
 random_seed = 42
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
@@ -64,10 +65,6 @@ out_scaler = out_scaler.fit(out_concat)
 # sum(out_norm[:,0])
 # sum(out_back[:,0])
 
-lag = int(3 * 60 / 5)
-delay = 3
-p_steps = 5
-
 def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12):
     in_data = np.array([])
     out_data = np.array([])
@@ -95,10 +92,45 @@ def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             out_data = np.append(out_data, out_sample[out_slice, :], axis=0)
     return in_data, out_data
 
+def sequence_sample_random(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12, random_seed=42):
+    in_data = np.array([])
+    out_data = np.array([])
+    l = lag
+    d = delay
+    n = prediction_steps
+
+    rnd_indices = np.random.choice(len(sims_data))
+    sample = sims_data[rnd_indices]
+    in_sample = np.array(sample[1][in_vars])
+    out_sample = np.array(sample[1][out_vars])
+    in_sample = in_scaler.transform(in_sample)
+    out_sample = out_scaler.transform(out_sample)
+
+    N = in_sample.shape[0]
+    k = N - (lag + delay + prediction_steps)
+
+    in_slice = np.array([range(i, i + l) for i in range(k)])
+    out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
+
+    in_data = in_sample[in_slice, :]
+    out_data = out_sample[out_slice, :]
+    return in_data, out_data
+
+
+
+
 #########################################################################
 # Use Sequence function to create x and y data for train and test
+lag = int(3 * 60 / 5)
+delay = 0
+p_steps = 6
+
 in_vars=['duration', 'p']
 out_vars=['Q_out']
+
+
+
+
 x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
@@ -114,17 +146,15 @@ https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cros
 
 '''
 
-
 x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
 print(y_val.shape)
 
-
 # Design network
 model = Sequential()
 model.add(LSTM(10, input_shape=(lag, len(in_vars))))
-model.add(Dense(1))
+model.add(Dense(p_steps)) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
 model.compile(loss='mae', optimizer='adam')
 
 # Fit network
@@ -135,13 +165,13 @@ validation_data=(x_val, y_val),
 verbose=2,
 shuffle=False)
 
-
 pyplot.plot(lstm.history['loss'], '--', label='train loss')
 pyplot.plot(lstm.history['val_loss'], label='test loss')
 pyplot.legend()
 pyplot.show()
 
-
+###############################################################
+# Saving and loading the model
 # serialize model to JSON
 model_json = model.to_json()
 with open("Gievenbeck_SingleNode_LSTM_20240328.json", "w") as json_file:
@@ -159,7 +189,31 @@ loaded_model = model_from_json(loaded_model_json)
 loaded_model.load_weights("Gievenbeck_SingleNode_LSTM_20240328.weights.h5")
 print("Loaded model from disk")
 
+###############################################################
+# Test the model
 
+x_test, y_test = sequence_sample_random(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                  out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, random_seed=random_seed)
+print(x_test.shape)
+print(y_test.shape)
+
+y_test_x = y_test.reshape(y_test.shape[0], -1)
+
+Predict = model.predict(x_test)
+Predict_revert = out_scaler.inverse_transform(Predict)
+y_revert = out_scaler.inverse_transform(y_test_x)
+
+n = int(len(x_test) / 3)
+Predict_revert[n]
+y_revert[n]
+Predict[n]
+y_test[n]
+# Plotting the predicted and actual values
+plt.plot(Predict_revert[n], label='Predicted')
+plt.plot(y_revert[n], label='Actual')
+plt.ylim(bottom=0)  # Set y-axis to start from zero
+plt.legend()
+plt.show()
 
 ####################################################
 # test area
