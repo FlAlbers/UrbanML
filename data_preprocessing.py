@@ -21,13 +21,15 @@ from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
+from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
+import os
 
-folder_path = '03_sim_data\\inp'
-sims_data = single_node(folder_path, 'R0019769',resample = '5min')
+folder_path_sim = '03_sim_data\\inp'
+sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
-
+model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
 random_seed = 42
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
@@ -65,58 +67,6 @@ out_scaler = out_scaler.fit(out_concat)
 # sum(out_norm[:,0])
 # sum(out_back[:,0])
 
-def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12):
-    in_data = np.array([])
-    out_data = np.array([])
-    l = lag
-    d = delay
-    n = prediction_steps
-
-    for sample in sims_data:
-        in_sample = np.array(sample[1][in_vars])
-        out_sample = np.array(sample[1][out_vars])
-        in_sample = in_scaler.transform(in_sample)
-        out_sample = out_scaler.transform(out_sample)
-
-        N = in_sample.shape[0]
-        k = N - (lag + delay + prediction_steps)
-
-        in_slice = np.array([range(i, i + l) for i in range(k)])
-        out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
-
-        if in_data.size == 0:
-            in_data = in_sample[in_slice, :]
-            out_data = out_sample[out_slice, :]
-        else:
-            in_data = np.append(in_data, in_sample[in_slice, :], axis=0)
-            out_data = np.append(out_data, out_sample[out_slice, :], axis=0)
-    return in_data, out_data
-
-def sequence_sample_random(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12, random_seed=42):
-    in_data = np.array([])
-    out_data = np.array([])
-    l = lag
-    d = delay
-    n = prediction_steps
-
-    rnd_indices = np.random.choice(len(sims_data))
-    sample = sims_data[rnd_indices]
-    in_sample = np.array(sample[1][in_vars])
-    out_sample = np.array(sample[1][out_vars])
-    in_sample = in_scaler.transform(in_sample)
-    out_sample = out_scaler.transform(out_sample)
-
-    N = in_sample.shape[0]
-    k = N - (lag + delay + prediction_steps)
-
-    in_slice = np.array([range(i, i + l) for i in range(k)])
-    out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
-
-    in_data = in_sample[in_slice, :]
-    out_data = out_sample[out_slice, :]
-    return in_data, out_data
-
-
 
 
 #########################################################################
@@ -127,7 +77,6 @@ p_steps = 6
 
 in_vars=['duration', 'p']
 out_vars=['Q_out']
-
 
 
 
@@ -173,24 +122,33 @@ pyplot.show()
 ###############################################################
 # Saving and loading the model
 # serialize model to JSON
+model_name = "Gievenbeck_SingleNode_LSTM_20240328"
+
 model_json = model.to_json()
-with open("Gievenbeck_SingleNode_LSTM_20240328.json", "w") as json_file:
+model_path = os.path.join(model_folder, model_name, ".json")
+with open(model_path, "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model.save_weights("Gievenbeck_SingleNode_LSTM_20240328.weights.h5")
+weights_path = os.path.join(model_folder, model_name, ".weights.h5")
+model.save_weights(weights_path)
 print("Saved model to disk")
 
 # load json and create model
-json_file = open('Gievenbeck_SingleNode_LSTM_20240328.json', 'r')
+json_file = open(model_path, 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
-loaded_model.load_weights("Gievenbeck_SingleNode_LSTM_20240328.weights.h5")
+loaded_model.load_weights(weights_path)
 print("Loaded model from disk")
 
 ###############################################################
 # Test the model
+
+seq_test = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                  out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+print(seq_test[0])
+
 
 x_test, y_test = sequence_sample_random(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, random_seed=random_seed)
