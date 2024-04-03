@@ -23,6 +23,8 @@ from matplotlib import pyplot
 import tensorflow as tf
 from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
 import os
+import joblib
+import pickle
 
 folder_path_sim = '03_sim_data\\inp'
 sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
@@ -100,12 +102,13 @@ x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_sc
 print(x_val.shape)
 print(y_val.shape)
 
-# Design network
+# Set up the LSTM model
 model = Sequential()
 model.add(LSTM(10, input_shape=(lag, len(in_vars))))
 model.add(Dense(p_steps)) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
 model.compile(loss='mae', optimizer='adam')
 
+# Train the model
 # Fit network
 lstm = model.fit(x_train, y_train,
 epochs=60,
@@ -121,17 +124,31 @@ pyplot.show()
 
 ###############################################################
 # Saving and loading the model
-# serialize model to JSON
+
+# Assign all relevant paths
 model_name = "Gievenbeck_SingleNode_LSTM_20240328"
+model_path = os.path.join(model_folder, model_name, ".json")
+weights_path = os.path.join(model_folder, model_name, ".weights.h5")
+in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
+out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
+test_data_path = os.path.join(model_folder, 'test_data')
+# Saving model design to JSON
 
 model_json = model.to_json()
-model_path = os.path.join(model_folder, model_name, ".json")
 with open(model_path, "w") as json_file:
     json_file.write(model_json)
-# serialize weights to HDF5
-weights_path = os.path.join(model_folder, model_name, ".weights.h5")
+
+# Saving weights to HDF5
 model.save_weights(weights_path)
-print("Saved model to disk")
+
+# Save the scalers
+joblib.dump(in_scaler, in_scaler_path)
+joblib.dump(out_scaler, out_scaler_path)
+
+# Save test data
+with open(test_data_path, 'wb') as file:
+    pickle.dump(test_data, file)
+print("Saved model, sacler and test data to disk")
 
 # load json and create model
 json_file = open(model_path, 'r')
@@ -140,11 +157,21 @@ json_file.close()
 loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
 loaded_model.load_weights(weights_path)
+
+# Load the scalers
+loaded_in_scaler = joblib.load(in_scaler_path)
+loaded_out_scaler = joblib.load(out_scaler_path)
+
+# Load the test data
+with open(test_data_path, 'rb') as file:
+    test_data_load = pickle.load(file)
+
 print("Loaded model from disk")
 
 ###############################################################
 # Test the model
 
+# sequence data to list structure
 seq_test = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(seq_test[0])
