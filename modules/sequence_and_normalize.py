@@ -119,7 +119,7 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
     Returns:
         List containing Data sorted for each event with dictionary of event data, sequenced input data and sequenced output data.
     """
-    
+
     in_data = np.array([])
     out_data = np.array([])
     l = lag
@@ -132,6 +132,12 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
         sample_name = sample[0].replace('.out', '')
         intervall = sample[1].index[1] - sample[1].index[0]
         intervall = int(intervall.total_seconds() / 60)
+        
+        if 'e2' in sample_name:
+            type = 'Euler Typ 2'
+        else:
+            type = 'Aufgezeichnet'
+        
         if 'duration' in sample[1]:
             event_duration = int(sample[1]['duration'].iloc[-1] - buffer_time.total_seconds() / 60)
         else:
@@ -143,7 +149,7 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             precip_sum = None
             max_intensity = None
 
-        event_dict = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'intervall': intervall}
+        event_dict = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'intervall': intervall, 'Ereignis': type}
 
         sequenced_list.append([])
         sequenced_list[len(sequenced_list)-1].append(event_dict)

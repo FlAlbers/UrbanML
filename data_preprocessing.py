@@ -31,8 +31,8 @@ sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
-
-
+intervall = sims_data[0][1].index[1] - sims_data[0][1].index[0]
+int(intervall.total_seconds() / 60)
 
 model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
 random_seed = 42
