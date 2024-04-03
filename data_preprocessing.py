@@ -31,6 +31,9 @@ sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
+
+
+
 model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
 random_seed = 42
 # Splitting data into train and test sets
