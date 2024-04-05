@@ -117,15 +117,22 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
         buffer_time (pd.Timedelta, optional): Buffer time to subtract from event duration. Defaults to pd.Timedelta('2h').
 
     Returns:
-        List containing Data sorted for each event with dictionary of event data, sequenced input data and sequenced output data.
+     - list with sequenced data without transformation
+     - list with sequenced data with transformation
+
+    each event in each list contains:
+        - col 0 = dictionary of event data
+        - col 1 = input data
+        - col 2 = output data
     """
 
-    in_data = np.array([])
-    out_data = np.array([])
+    in_seq_trans = np.array([])
+    out_seq_trans = np.array([])
     l = lag
     d = delay
     n = prediction_steps
 
+    sequenced_list_trans = []
     sequenced_list = []
 
     for sample in sims_data:
@@ -133,6 +140,7 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
         intervall = sample[1].index[1] - sample[1].index[0]
         intervall = int(intervall.total_seconds() / 60)
         
+        # get meta data of events
         if 'e2' in sample_name:
             type = 'Euler Typ 2'
         else:
@@ -149,31 +157,51 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             precip_sum = None
             max_intensity = None
 
+        # create event dictionary für event meta data
         event_dict = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'intervall': intervall, 'Ereignis': type}
-
+    	
+        # append event dictionary to list
         sequenced_list.append([])
         sequenced_list[len(sequenced_list)-1].append(event_dict)
+        sequenced_list_trans.append([])
+        sequenced_list_trans[len(sequenced_list_trans)-1].append(event_dict)
+
+        # get input and output data of event
         in_sample = np.array(sample[1][in_vars])
         out_sample = np.array(sample[1][out_vars])
-        in_sample = in_scaler.transform(in_sample)
-        out_sample = out_scaler.transform(out_sample)
+        # normalize data with given scalers
+        in_sample_trans = in_scaler.transform(in_sample)
+        out_sample_trans = out_scaler.transform(out_sample)
 
+        # get total time steps of event
         N = in_sample.shape[0]
+        # get number of possible sequences in event
         k = N - (lag + delay + prediction_steps)
         
         # make slicer to extract sequences from in and out data
         in_slice = np.array([range(i, i + l) for i in range(k)])
         out_slice = np.array([range(i + l + d, i + l + d + n) for i in range(k)])
 
-        # slice and append data
-        in_data = in_sample[in_slice, :]
-        out_data = out_sample[out_slice, :]
+        # slice and append data for transformed and non-transformed data
+        in_seq = in_sample[in_slice, :]
+        out_seq = out_sample[out_slice, :]
+        in_seq_trans = in_sample_trans[in_slice, :]
+        out_seq_trans = out_sample_trans[out_slice, :]
 
-        # reshape out data so that each sequence is a consecutive 1d array and not containing multiple arrays for each value
-        # out_data = out_data.reshape(out_data.shape[0], -1)
+        # append data of transformed and non-transformed data to their lists
+        sequenced_list[len(sequenced_list)-1].append(in_seq)
+        sequenced_list[len(sequenced_list)-1].append(out_seq)
+        sequenced_list_trans[len(sequenced_list_trans)-1].append(in_seq_trans)
+        sequenced_list_trans[len(sequenced_list_trans)-1].append(out_seq_trans)
 
-        sequenced_list[len(sequenced_list)-1].append(in_data)
-        sequenced_list[len(sequenced_list)-1].append(out_data)
+    '''
+    Returns:
+     - list with sequenced data without transformation
+     - list with sequenced data with transformation
 
-    # returns list with col 0 = dictionary of event data, col 1 = input data, col 2 = output data
-    return sequenced_list
+    each event in each list contains:
+        - col 0 = dictionary of event data
+        - col 1 = input data
+        - col 2 = output data
+    '''
+    return sequenced_list, sequenced_list_trans
