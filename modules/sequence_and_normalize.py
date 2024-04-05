@@ -158,7 +158,7 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             max_intensity = None
 
         # create event dictionary für event meta data
-        event_dict = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'intervall': intervall, 'Ereignis': type}
+        event_dict = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'interval': intervall, 'Ereignis': type}
     	
         # append event dictionary to list
         sequenced_list.append([])
