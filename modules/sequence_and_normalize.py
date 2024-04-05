@@ -169,6 +169,9 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
         in_data = in_sample[in_slice, :]
         out_data = out_sample[out_slice, :]
 
+        # reshape out data so that each sequence is a consecutive 1d array and not containing multiple arrays for each value
+        # out_data = out_data.reshape(out_data.shape[0], -1)
+
         sequenced_list[len(sequenced_list)-1].append(in_data)
         sequenced_list[len(sequenced_list)-1].append(out_data)
 

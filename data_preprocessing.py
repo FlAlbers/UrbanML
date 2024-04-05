@@ -56,8 +56,8 @@ p = rainfall [mm/h]
 
 ############ Fitting scalers for Normalization of data
 # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
-in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in sims_data], axis=0))
-out_concat  = np.array(pd.concat([sample[1][['Q_out']] for sample in sims_data], axis=0))
+in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
+out_concat  = np.array(pd.concat([sample[1][['Q_out']] for sample in train_val_data], axis=0))
 
 # Fitting the scalers for in and out data
 in_scaler = MinMaxScaler(feature_range=(0, 1))
@@ -107,9 +107,11 @@ print(y_val.shape)
 
 # Set up the LSTM model
 model = Sequential()
-model.add(LSTM(10, input_shape=(lag, len(in_vars))))
+model.add(LSTM(10, input_shape=(lag, len(in_vars)))) # input shape: (sequence length, number of features)
+#units = number of hidden layers
 model.add(Dense(p_steps)) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
 model.compile(loss='mae', optimizer='adam')
+model.summary()
 
 # Train the model
 # Fit network
@@ -130,8 +132,8 @@ pyplot.show()
 
 # Assign all relevant paths
 model_name = "Gievenbeck_SingleNode_LSTM_20240328"
-model_path = os.path.join(model_folder, model_name, ".json")
-weights_path = os.path.join(model_folder, model_name, ".weights.h5")
+model_path = os.path.join(model_folder, f'{model_name}.json')
+weights_path = os.path.join(model_folder, f'{model_name}.weights.h5')
 in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
 out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
 test_data_path = os.path.join(model_folder, 'test_data')
@@ -161,6 +163,9 @@ loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
 loaded_model.load_weights(weights_path)
 
+loaded_model.summary()
+
+
 # Load the scalers
 loaded_in_scaler = joblib.load(in_scaler_path)
 loaded_out_scaler = joblib.load(out_scaler_path)
@@ -178,7 +183,6 @@ print("Loaded model from disk")
 seq_test = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(seq_test[0])
-
 
 x_test, y_test = sequence_sample_random(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, random_seed=random_seed)
