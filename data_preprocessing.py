@@ -54,6 +54,8 @@ Q_out = total_inflow [m³/s]
 p = rainfall [mm/h]
 '''
 
+in_vars=['duration', 'p']
+out_vars=['Q_out']
 ############ Fitting scalers for Normalization of data
 # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
 in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
@@ -80,8 +82,6 @@ lag = int(3 * 60 / 5)
 delay = 0
 p_steps = 6
 
-in_vars=['duration', 'p']
-out_vars=['Q_out']
 
 
 
