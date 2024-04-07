@@ -90,6 +90,8 @@ x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars,
 print(x_train.shape)
 print(y_train.shape)
 
+
+
 '''
 Include crossvalidation here to split the training data into training and validation data for crossvalidation
 https://scikit-learn.org/stable/modules/cross_validation.html
@@ -175,6 +177,8 @@ with open(test_data_path, 'rb') as file:
     test_data_load = pickle.load(file)
 
 print("Loaded model from disk")
+
+
 
 ###############################################################
 # Test the model

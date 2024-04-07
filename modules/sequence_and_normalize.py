@@ -157,14 +157,17 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=['Q_out'], in_s
             precip_sum = None
             max_intensity = None
 
-        # create event dictionary für event meta data
-        event_dict = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'interval': intervall, 'Ereignis': type}
-    	
+        # create dictionary for event and model meta data
+        # !!!!!vvvvvvvv changes here will affect other functions vvvvvvvv!!!!!!!!!!!
+        meta_dictionary = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'interval': intervall, 'event type': type, 'lag': l, 'delay': d, 'prediction steps': n}
+    	# !!!!!^^^^^^^^ changes here will affect other functions ^^^^^^^^^^!!!!!!!!!!!
+     
+
         # append event dictionary to list
         sequenced_list.append([])
-        sequenced_list[len(sequenced_list)-1].append(event_dict)
+        sequenced_list[len(sequenced_list)-1].append(meta_dictionary)
         sequenced_list_trans.append([])
-        sequenced_list_trans[len(sequenced_list_trans)-1].append(event_dict)
+        sequenced_list_trans[len(sequenced_list_trans)-1].append(meta_dictionary)
 
         # get input and output data of event
         in_sample = np.array(sample[1][in_vars])
