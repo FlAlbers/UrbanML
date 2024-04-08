@@ -99,7 +99,6 @@ https://scikit-learn.org/stable/modules/cross_validation.html
 Maybe block chaining cross validation
 https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
 
-
 '''
 
 x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 

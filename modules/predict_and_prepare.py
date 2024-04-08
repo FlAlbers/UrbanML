@@ -1,6 +1,30 @@
 import numpy as np
 import copy
 
+# dimensionsänderung beachten wenn lstm von dense auf sequence umgestellt wird
+def pred_all(model, out_scaler, event_list, event_list_trans):
+    """
+    Perform predictions using a given model and scaler on a list of sequences sorted by event.
+
+    Args:
+        model: The trained model used for predictions.
+        out_scaler: The scaler used to transform the predictions back to their original scale.
+        event_list: The list of event sequences to be predicted.
+        event_list_trans: The transformed version of the event list for the model.
+
+    Returns:
+        new_list: The updated event list with predictions appended.
+    """
+    new_list = copy.deepcopy(event_list)
+    interval = event_list[0][0]['interval']
+    delay = event_list[0][0]['delay']
+    p_steps = event_list[0][0]['prediction steps']
+    for n_sample in range(len(event_list)):
+        Predict = model.predict(event_list_trans[n_sample][1])
+        Predict_invert = out_scaler.inverse_transform(Predict)
+        new_list[n_sample].append(Predict_invert.reshape((len(Predict_invert), len(Predict_invert[0]), 1)))
+
+    return new_list
 
 # dimensionsänderung beachten wenn lstm von dense auf sequence umgestellt wird
 def pred_and_add_durIndex(model, out_scaler, event_list, event_list_trans):
@@ -49,32 +73,6 @@ def pred_and_add_durIndex(model, out_scaler, event_list, event_list_trans):
         del actual_dur
 
     return new_list
-
-# dimensionsänderung beachten wenn lstm von dense auf sequence umgestellt wird
-def pred_all(model, out_scaler, event_list, event_list_trans):
-    """
-    Perform predictions using a given model and scaler on a list of sequences sorted by event.
-
-    Args:
-        model: The trained model used for predictions.
-        out_scaler: The scaler used to transform the predictions back to their original scale.
-        event_list: The list of event sequences to be predicted.
-        event_list_trans: The transformed version of the event list for the model.
-
-    Returns:
-        new_list: The updated event list with predictions appended.
-    """
-    new_list = copy.deepcopy(event_list)
-    interval = event_list[0][0]['interval']
-    delay = event_list[0][0]['delay']
-    p_steps = event_list[0][0]['prediction steps']
-    for n_sample in range(len(event_list)):
-        Predict = model.predict(event_list_trans[n_sample][1])
-        Predict_invert = out_scaler.inverse_transform(Predict)
-        new_list[n_sample].append(Predict_invert.reshape((len(Predict_invert), len(Predict_invert[0]), 1)))
-
-    return new_list
-
 
 # function testing area
 if __name__ == '__main__':
