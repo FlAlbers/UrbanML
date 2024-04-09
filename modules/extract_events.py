@@ -50,9 +50,12 @@ def extract_events(P_events, P_series, save_folder):
 
 #Code for Testing function
 if __name__ == '__main__':
-    events_path = '02_input_data\\events_FMO.csv'
-    P_path = '02_input_data\\P_FMO.csv'
-    save_folder = '03_sim_data\\quick_sim'
+    events_path = os.path.join('02_input_data','events_FMO.csv')
+    P_path = os.path.join('02_input_data','P_FMO.csv')
+    save_folder = os.path.join('03_sim_data','quick_sim')
+    # events_path = '02_input_data\\events_FMO.csv'
+    # P_path = '02_input_data\\P_FMO.csv'
+    # save_folder = '03_sim_data\\quick_sim'
 
     P_events = pd.read_csv(events_path)
     P_series = pd.read_csv(P_path)

@@ -37,6 +37,7 @@ import pandas as pd
 
 def single_node(folder_path, node = 'R0019769', resample = '1min'):
     sims_data = []
+    wd = os.getcwd()
     for file_name in os.listdir(folder_path):
         if file_name.endswith('.out'):
             with Output(os.path.join(folder_path, file_name)) as out:
@@ -54,7 +55,8 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
 
 
 if __name__ == '__main__':
-    folder_path = '03_sim_data\\sim_test'
+    folder_path = os.path.join('03_sim_data', 'sim_test')
+    # folder_path = '03_sim_data\\sim_test'
     sims_data = single_node(folder_path, 'R0019769',resample = '5min')
     test = single_node(folder_path, 'R0019769')
  

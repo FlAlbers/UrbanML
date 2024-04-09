@@ -48,17 +48,19 @@ current_path = os.getcwd()
 ###########################################################################################################
 # Input section
 ## Input parameters for inp file generation
-base_inp_path = '03_sim_data\\Gievenbeck_20240325.inp'
+base_inp_path = os.path.join('03_sim_data', 'Gievenbeck_20240325.inp')
+# base_inp_path = '03_sim_data\\Gievenbeck_20240325.inp'
 # path to folder with rain event data
-event_data_path = '02_input_data\\events_FMO'
+event_data_path = os.path.join('02_input_data', 'events_FMO')
+# event_data_path = '02_input_data\\events_FMO'
 # path to kostra data
-kostra_data_path = os.path.join(current_path, '02_input_data\\kostra_118111.csv')
+kostra_data_path = os.path.join(current_path, '02_input_data', 'kostra_118111.csv')
 # set maximum duration time [min] for Kostra data
 max_duration = 72*60
 # Name of the study area
 name_place = 'Gievenbeck'
 # Path to save the inp files
-save_inp_path = os.path.join(current_path, '03_sim_data\\inp')
+save_inp_path = os.path.join(current_path, '03_sim_data','inp')
 # Euler type for Kostra data (2 is standard)
 euler_typ = 2
 # Start time of the simulation

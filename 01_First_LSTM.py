@@ -26,7 +26,7 @@ import os
 import joblib
 import pickle
 
-folder_path_sim = '03_sim_data\\inp'
+folder_path_sim = os.path.join('03_sim_data', 'inp')
 sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values

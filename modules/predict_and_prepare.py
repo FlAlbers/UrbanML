@@ -85,7 +85,8 @@ if __name__ == '__main__':
     from modules.sequence_and_normalize import sequence_list
   
     # Assign all relevant paths
-    model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
+    model_folder = os.path.join('05_models', 'Gievenbeck_SingleNode_LSTM_20240328')
+    # model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
     model_name = "Gievenbeck_SingleNode_LSTM_20240328"
     model_path = os.path.join(model_folder, f'{model_name}.json')
     weights_path = os.path.join(model_folder, f'{model_name}.weights.h5')
