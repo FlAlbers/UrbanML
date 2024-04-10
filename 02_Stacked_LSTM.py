@@ -22,11 +22,10 @@ import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
 from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
+from modules.save_load_model import save_model, load_model
 import os
 import joblib
 import pickle
-
-
 
 folder_path_sim = os.path.join('03_sim_data', 'inp')
 sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
@@ -145,21 +144,7 @@ model.compile(loss='mae', optimizer='adam')
 model.summary()
 
 # Train the model
-# Fit network
 lstm = model.fit(x_train, y_train,epochs=60,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
-
-# # Set up the LSTM model
-# model = Sequential()
-# model.add(LSTM(10, input_shape=(lag, len(in_vars)))) # input shape: (sequence length, number of features)
-
-# model.add() # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
-# model.compile(loss='mae', optimizer='adam')
-# model.summary()
-
-
-# Train the model
-# Fit network
-# lstm = model.fit(x_train, y_train,epochs=60,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
 
 pyplot.plot(lstm.history['loss'], '--', label='train loss')
 pyplot.plot(lstm.history['val_loss'], label='validation loss')
@@ -167,59 +152,16 @@ pyplot.legend()
 pyplot.show()
 
 ###############################################################
-# Saving and loading the model
 
-# Assign all relevant paths
-if not os.path.exists(model_folder):
-    os.makedirs(model_folder)
+# Saving the model, the scalers and the test data
+save_model(model, model_folder, in_scaler, out_scaler, test_data)
 
-model_path = os.path.join(model_folder, 'model.json')
-weights_path = os.path.join(model_folder, 'model.weights.h5')
-in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
-out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
-test_data_path = os.path.join(model_folder, 'test_data')
-
-# Saving model design to JSON
-model_json = model.to_json()
-with open(model_path, "w") as json_file:
-    json_file.write(model_json)
-
-# Saving weights to HDF5
-model.save_weights(weights_path)
-
-# Save the scalers
-joblib.dump(in_scaler, in_scaler_path)
-joblib.dump(out_scaler, out_scaler_path)
-
-# Save test data
-with open(test_data_path, 'wb') as file:
-    pickle.dump(test_data, file)
-print("Saved model, sacler and test data to disk")
-
-# load json and create model
-json_file = open(model_path, 'r')
-loaded_model_json = json_file.read()
-json_file.close()
-loaded_model = model_from_json(loaded_model_json)
-# load weights into new model
-loaded_model.load_weights(weights_path)
-
-loaded_model.summary()
-
-
-# Load the scalers
-loaded_in_scaler = joblib.load(in_scaler_path)
-loaded_out_scaler = joblib.load(out_scaler_path)
-
-# Load the test data
-with open(test_data_path, 'rb') as file:
-    test_data_load = pickle.load(file)
-
-print("Loaded model from disk")
+# Load the model, the scalers and the test data
+model, in_scaler, out_scaler, test_data = load_model(model_folder)
 
 
 
-###############################################################
+################################################################
 # Test the model
 
 # sequence data to list structure

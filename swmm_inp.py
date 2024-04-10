@@ -56,11 +56,11 @@ event_data_path = os.path.join('02_input_data', 'events_FMO')
 # path to kostra data
 kostra_data_path = os.path.join(current_path, '02_input_data', 'kostra_118111.csv')
 # set maximum duration time [min] for Kostra data
-max_duration = 72*60
+max_duration = 24*60 # 24 hours
 # Name of the study area
 name_place = 'Gievenbeck'
 # Path to save the inp files
-save_inp_path = os.path.join(current_path, '03_sim_data','inp')
+save_inp_path = os.path.join(current_path, '03_sim_data','inp_1d_max')
 # Euler type for Kostra data (2 is standard)
 euler_typ = 2
 # Start time of the simulation
@@ -105,10 +105,12 @@ inp_base['OPTIONS'].update({'THREADS': cpu_cores})
 if not report_subcatchments:
     del inp_base[sections.REPORT]['SUBCATCHMENTS']
 
-
 ################################################################################################################
 # create inp files
 # get all euler model rain series for all return periods and durations
+if not os.path.exists(save_inp_path):
+    os.mkdir(save_inp_path)
+
 for j in returnrate:
     for d in durations:
         inp = inp_base

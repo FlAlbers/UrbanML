@@ -85,15 +85,10 @@ lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
-
-
-
 x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
 print(y_train.shape)
-
-
 
 '''
 Include crossvalidation here to split the training data into training and validation data for crossvalidation
@@ -101,7 +96,6 @@ https://scikit-learn.org/stable/modules/cross_validation.html
 
 Maybe block chaining cross validation
 https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
-
 '''
 
 x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
@@ -111,7 +105,7 @@ print(y_val.shape)
 
 # Set up the LSTM model
 model = Sequential()
-model.add(LSTM(10, input_shape=(lag, len(in_vars)))) # input shape: (sequence length, number of features)
+model.add(LSTM(32, input_shape=(lag, len(in_vars)))) # input shape: (sequence length, number of features)
 #units = number of hidden layers
 model.add(Dense(p_steps)) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
 model.compile(loss='mae', optimizer='adam')
@@ -134,14 +128,17 @@ pyplot.show()
 ###############################################################
 # Saving and loading the model
 
+# Create model_folder if not existing
+if not os.path.exists(model_folder):
+    os.makedirs(model_folder)
+
 # Assign all relevant paths
-model_name = "Gievenbeck_SingleNode_LSTM_20240328"
-model_path = os.path.join(model_folder, f'{model_name}.json')
-weights_path = os.path.join(model_folder, f'{model_name}.weights.h5')
+model_path = os.path.join(model_folder, 'model.json')
+weights_path = os.path.join(model_folder, 'model.weights.h5')
 in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
 out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
 test_data_path = os.path.join(model_folder, 'test_data')
-# Saving model design to JSON
+
 
 model_json = model.to_json()
 with open(model_path, "w") as json_file:
