@@ -16,7 +16,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error , mean_absolute_error
 from keras.models import Sequential, Model, model_from_json
-from keras.layers import Dense, Input
+from keras.layers import Dense, Input, Flatten
 from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
@@ -35,8 +35,11 @@ sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 
 # intervall = sims_data[0][1].index[1] - sims_data[0][1].index[0]
 # int(intervall.total_seconds() / 60)
+model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
 
-model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
+model_folder = os.path.join('05_models', model_name)
+
+
 random_seed = 42
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
@@ -125,14 +128,19 @@ y_val = [y_val, y_val]
 input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
 first_dense = Dense(units=32)(input_layer) #units = number of hidden layers
 # Y1 output will be fed from the first dense
-y1_output = Dense(units=p_steps, name='Q1')(first_dense)
+first_flatten = Flatten()(first_dense)
+y1_output = Dense(units=p_steps, name='Q1')(first_flatten)
+
 
 second_dense = Dense(units=32, activation='relu')(input_layer)
 # Y2 output will be fed from the second dense
-y2_output = Dense(units=p_steps, name='Q2')(second_dense)
+second_flatten = Flatten()(second_dense)
+y2_output = Dense(units=p_steps, name='Q2')(second_flatten)
 
 # Define the model with the input layer and a list of output layers
 model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+
+# model = Model(inputs=input_layer, outputs=y1_output)
 model.compile(loss='mae', optimizer='adam')
 model.summary()
 
@@ -154,7 +162,7 @@ lstm = model.fit(x_train, y_train,epochs=60,batch_size=10,validation_data=(x_val
 # lstm = model.fit(x_train, y_train,epochs=60,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
 
 pyplot.plot(lstm.history['loss'], '--', label='train loss')
-pyplot.plot(lstm.history['val_loss'], label='test loss')
+pyplot.plot(lstm.history['val_loss'], label='validation loss')
 pyplot.legend()
 pyplot.show()
 
@@ -162,14 +170,16 @@ pyplot.show()
 # Saving and loading the model
 
 # Assign all relevant paths
-model_name = "Gievenbeck_DoubleNodeTest_LSTM_20240408"
-model_path = os.path.join(model_folder, f'{model_name}.json')
-weights_path = os.path.join(model_folder, f'{model_name}.weights.h5')
+if not os.path.exists(model_folder):
+    os.makedirs(model_folder)
+
+model_path = os.path.join(model_folder, 'model.json')
+weights_path = os.path.join(model_folder, 'model.weights.h5')
 in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
 out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
 test_data_path = os.path.join(model_folder, 'test_data')
-# Saving model design to JSON
 
+# Saving model design to JSON
 model_json = model.to_json()
 with open(model_path, "w") as json_file:
     json_file.write(model_json)

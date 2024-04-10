@@ -26,6 +26,10 @@ import os
 import joblib
 import pickle
 
+tf.test.is_built_with_cuda()
+devices = tf.config.list_physical_devices('GPU')
+print(len(devices)) 
+
 folder_path_sim = os.path.join('03_sim_data', 'inp')
 sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
@@ -75,10 +79,9 @@ out_scaler = out_scaler.fit(out_concat)
 # sum(out_back[:,0])
 
 
-
 #########################################################################
 # Use Sequence function to create x and y data for train and test
-lag = int(3 * 60 / 5)
+lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
