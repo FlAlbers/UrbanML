@@ -16,7 +16,7 @@ These functions are used to extract simulation data from .out files. The data is
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from pyswmm import Nodes, Links, Output, NodeSeries, SystemSeries
+from pyswmm import Nodes, Simulation, Output, NodeSeries, SystemSeries
 import os
 import pandas as pd
 
@@ -75,6 +75,11 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
     Returns:
         - list of with data for each simulation
     '''
+    # if nodes is None:
+    if nodes is None:
+        first_file = [file_name for file_name in os.listdir(folder_path) if file_name.endswith('.inp')][0]
+        with Simulation(os.path.join(folder_path, first_file)) as sim:
+            nodes = [node.nodeid for node in Nodes(sim)]
 
     nodes = [nodes] if not isinstance(nodes, list) else nodes
 
@@ -102,11 +107,14 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
 
 # Test Area for testing the functions
 if __name__ == '__main__':
+
+
     folder_path = os.path.join('03_sim_data', 'sim_test')
     nodes = ['R0019769', 'R0019768']
-    sims_data = multi_node(folder_path, nodes,resample = '5min')
+    sims_data = multi_node(folder_path, nodes = None,resample = '5min')
     # sims_data = single_node(folder_path, 'R0019769',resample = '5min')
-    sims_data
+    # sims_data
+
 
     ##############################################################
     # Test Plot
