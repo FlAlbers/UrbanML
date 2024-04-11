@@ -12,7 +12,7 @@ import joblib
 import os
 import pickle
 
-def save_model(model, save_folder, in_scaler, out_scaler, test_data):
+def save_model(model, save_folder, in_scaler, out_scaler, train_data=None, val_data = None, test_data=None):
     """
     Saves the model, input scaler, output scaler, and test data to disk.
 
@@ -35,7 +35,10 @@ def save_model(model, save_folder, in_scaler, out_scaler, test_data):
     weights_path = os.path.join(save_folder, 'model.weights.h5')
     in_scaler_path = os.path.join(save_folder, 'in_scaler.pkl')
     out_scaler_path = os.path.join(save_folder, 'out_scaler.pkl')
+    train_data_path = os.path.join(save_folder, 'train_data')
+    validation_data_path = os.path.join(save_folder, 'validation_data')
     test_data_path = os.path.join(save_folder, 'test_data')
+    data_paths = [(train_data_path, train_data), (validation_data_path, val_data), (test_data_path, test_data)]
 
     # Saving model design to JSON
     model_json = model.to_json()
@@ -49,9 +52,12 @@ def save_model(model, save_folder, in_scaler, out_scaler, test_data):
     joblib.dump(in_scaler, in_scaler_path)
     joblib.dump(out_scaler, out_scaler_path)
 
-    # Save test data
-    with open(test_data_path, 'wb') as file:
-        pickle.dump(test_data, file)
+    # Save train, validation and test data
+    for data in data_paths:
+        if data[1] is not None:
+            with open(data[0], 'wb') as file:
+                pickle.dump(data[1], file)
+    
     print("Saved model, scaler, and test data to disk")
 
     return None
@@ -75,8 +81,10 @@ def load_model(model_folder):
     weights_path = os.path.join(model_folder, 'model.weights.h5')
     in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
     out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
+    train_data_path = os.path.join(model_folder, 'train_data')
+    validation_data_path = os.path.join(model_folder, 'validation_data')
     test_data_path = os.path.join(model_folder, 'test_data')
-        
+    data_paths = [train_data_path, validation_data_path, test_data_path]
     # Load the model and the scalers
     # load json and create model
     json_file = open(model_path, 'r')
@@ -92,18 +100,25 @@ def load_model(model_folder):
     in_scaler = joblib.load(in_scaler_path)
     out_scaler = joblib.load(out_scaler_path)
 
-    # Load the test data
+    # Load the train, validation, test data
+    with open(train_data_path, 'rb') as file:
+        train_data = pickle.load(file)
+    with open(validation_data_path, 'rb') as file:
+        validation_data = pickle.load(file)
     with open(test_data_path, 'rb') as file:
         test_data = pickle.load(file)
+    
+    
 
     print("Loaded model from disk")
 
-    return model, in_scaler, out_scaler, test_data
+    return model, in_scaler, out_scaler, train_data, validation_data, test_data
 
 # Test Area for functions
 if __name__ == '__main__':
     model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
     model_folder = os.path.join('05_models', model_name)
     model, in_scaler, out_scaler, test_data = load_model(model_folder)
+    save_folder = model_folder
 
     model.summary()

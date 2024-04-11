@@ -21,13 +21,13 @@ from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
-from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
+from modules.sequence_and_normalize import sequence_data, sequence_for_sequential, sequence_sample_random, sequence_list
 from modules.save_load_model import save_model, load_model
 import os
 
 
 folder_path_sim = os.path.join('03_sim_data', 'inp')
-sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min')
+sims_data = multi_node(folder_path_sim, ['R0019769'],resample = '5min') # ['R0019769','R0019717']
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
@@ -58,11 +58,15 @@ p = rainfall [mm/h]
 '''
 
 in_vars=['duration', 'p']
-out_vars=['Q_out']
+out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
+# out_vars=['Q_out']
 ############ Fitting scalers for Normalization of data
 # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
 in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
-out_concat  = np.array(pd.concat([sample[1][['Q_out']] for sample in train_val_data], axis=0))
+
+
+
+out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
 
 # Fitting the scalers for in and out data
 in_scaler = MinMaxScaler(feature_range=(0, 1))
@@ -91,7 +95,8 @@ p_steps = 6
 x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
-print(y_train.shape)
+print(y_train[0].shape)
+print(y_train[1].shape)
 
 
 
@@ -107,7 +112,8 @@ https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cros
 x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
-print(y_val.shape)
+print(y_val[0].shape)
+print(y_val[1].shape)
 
 '''
 1. When sequencing all output sequences need to be in one array containing all output sequences (like a list)
@@ -115,9 +121,9 @@ print(y_val.shape)
 3. assign input and output layers to model
 '''
 
-y_train = [y_train, y_train]
+# y_train = [y_train, y_train]
 
-y_val = [y_val, y_val]
+# y_val = [y_val, y_val]
 
 ########### Stacked LSTM
 # https://colab.research.google.com/drive/1sZqFWkWTmv-htvL7OwiFMHX022Gy0Syf
@@ -129,21 +135,37 @@ first_dense = Dense(units=32)(input_layer) #units = number of hidden layers
 first_flatten = Flatten()(first_dense)
 y1_output = Dense(units=p_steps, name='Q1')(first_flatten)
 
-
-second_dense = Dense(units=32, activation='relu')(input_layer)
-# Y2 output will be fed from the second dense
-second_flatten = Flatten()(second_dense)
-y2_output = Dense(units=p_steps, name='Q2')(second_flatten)
+# # For second output define the second dense layer and the second output
+# second_dense = Dense(units=32, activation='relu')(input_layer)
+# # Y2 output will be fed from the second dense
+# second_flatten = Flatten()(second_dense)
+# y2_output = Dense(units=p_steps, name='Q2')(second_flatten)
 
 # Define the model with the input layer and a list of output layers
-model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+model = Model(inputs=input_layer, outputs=[y1_output])
 
-# model = Model(inputs=input_layer, outputs=y1_output)
-model.compile(loss='mae', optimizer='adam')
+# # For Second output
+# model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+
+model.compile(loss='mae', optimizer='adam', metrics=['mse', 'mae', 'mape'])
 model.summary()
+
 
 # Train the model
 lstm = model.fit(x_train, y_train,epochs=60,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
+
+x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                  out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+print(x_test.shape)
+# print(y_test[1].shape)
+
+scores = model.evaluate(x_test, y_test, verbose=1)
+print('MSE = ', round(scores[0],4))
+print('MAE = ', round(scores[1],4))
+print('MAPE = ', round(scores[2]*100,2) , '%')
+# cvscores.append(scores * 100)
+ 
+# print("%.2f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 
 pyplot.plot(lstm.history['loss'], '--', label='train loss')
 pyplot.plot(lstm.history['val_loss'], label='validation loss')
@@ -153,11 +175,10 @@ pyplot.show()
 ###############################################################
 
 # Saving the model, the scalers and the test data
-save_model(model, model_folder, in_scaler, out_scaler, test_data)
+save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data)
 
 # Load the model, the scalers and the test data
-model, in_scaler, out_scaler, test_data = load_model(model_folder)
-
+model, in_scaler, out_scaler, train_data, val_data, test_data = load_model(model_folder)
 
 
 ################################################################
@@ -168,7 +189,7 @@ seq_test = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scale
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(seq_test[0])
 
-x_test, y_test = sequence_sample_random(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, random_seed=random_seed)
 print(x_test.shape)
 print(y_test.shape)

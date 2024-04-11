@@ -63,7 +63,7 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
 
     Parameters:
         - folder_path: path to the folder containing the .out files
-        - nodes: nodes names like in inp files
+        - nodes: list of node names like in inp files
         - resample: resample time
             - example -> '5min' or '1min' ...
 
@@ -75,6 +75,9 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
     Returns:
         - list of with data for each simulation
     '''
+
+    nodes = [nodes] if not isinstance(nodes, list) else nodes
+
     sims_data = []
     wd = os.getcwd()
 
