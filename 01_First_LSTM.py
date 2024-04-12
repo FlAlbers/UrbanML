@@ -21,7 +21,7 @@ from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
-from sequence_and_normalize import sequence_for_sequential, sequence_sample_random, sequence_list
+from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
 import os
 import joblib
 import pickle
@@ -85,7 +85,7 @@ lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
-x_train, y_train = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
 print(y_train.shape)
@@ -98,7 +98,7 @@ Maybe block chaining cross validation
 https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
 '''
 
-x_val, y_val = sequence_for_sequential(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
 print(y_val.shape)
@@ -115,8 +115,8 @@ model.summary()
 # Fit network
 lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
 
-pyplot.plot(lstm.history['loss'], '--', label='train loss')
-pyplot.plot(lstm.history['val_loss'], label='test loss')
+pyplot.plot(lstm.history['loss'], '--', label='train mse')
+pyplot.plot(lstm.history['val_loss'], label='test mse')
 pyplot.legend()
 pyplot.show()
 

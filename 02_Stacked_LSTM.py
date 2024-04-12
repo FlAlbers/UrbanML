@@ -21,7 +21,7 @@ from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
-from sequence_and_normalize import sequence_data, sequence_for_sequential, sequence_sample_random, sequence_list
+from modules.sequence_and_normalize import sequence_data, sequence_for_sequential, sequence_sample_random, sequence_list
 from modules.save_load_model import save_model, load_model
 import os
 
@@ -168,7 +168,7 @@ x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in
 print(x_test.shape)
 print(y_test.shape)
 
-y_test_x = y_test.reshape(y_test.shape[0], -1)
+# y_test_x = y_test.reshape(y_test.shape[0], -1)
 
 Predict = model.predict(x_test)
 Predict_revert = out_scaler.inverse_transform(Predict)

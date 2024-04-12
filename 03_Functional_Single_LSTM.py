@@ -21,7 +21,7 @@ from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
-from sequence_and_normalize import sequence_data, sequence_for_sequential, sequence_sample_random, sequence_list
+from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
 from modules.save_load_model import save_model, load_model
 import os
 
@@ -71,7 +71,7 @@ lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
-x_train, y_train = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
 print(y_train[0].shape)
@@ -86,7 +86,7 @@ https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cros
 
 '''
 
-x_val, y_val = sequence_for_sequential(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
 print(y_val.shape)
@@ -103,10 +103,7 @@ print(y_val[1].shape)
 
 # Define model layers.
 input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
-# first_flatten = Flatten()(input_layer)
 lstm_1 = LSTM(units=32, activation='relu')(input_layer) #units = number of hidden layers
-# Y1 output will be fed from the first dense
-
 y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
 
 # # For second output define the second dense layer and the second output
@@ -128,7 +125,7 @@ model.summary()
 # Train the model
 lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
 
-x_test, y_test = sequence_for_sequential(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_test.shape)
 # print(y_test[1].shape)
