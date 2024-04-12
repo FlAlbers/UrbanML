@@ -35,6 +35,7 @@ def out_slicer(out_sample, lag, delay, prediction_steps):
 
 def sequence_for_sequential(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12):
     """
+    !!!!! Only for keras.Sequential
     Sequences the input and output data based on lag, delay, and prediction steps.
 
     Args:
@@ -72,7 +73,9 @@ def sequence_for_sequential(sims_data, in_vars=['duration', 'p'], out_vars=None,
 
         
         # slice and append data
-        in_sliced, out_sliced = slicer(in_sample, out_sample, lag, delay, prediction_steps)
+        in_sliced = in_slicer(in_sample, lag, delay, prediction_steps)
+        out_sliced = out_slicer(out_sample, lag, delay, prediction_steps)
+
         if in_data.size == 0:
             in_data = in_sliced
             out_data = out_sliced
@@ -223,7 +226,7 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler
 
 def sequence_data(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler=None, out_scaler=None, lag = 36, delay = 0, prediction_steps = 12):
     """
-    !!!! only for model using keras.Sequential
+
     Sequences the input and output data based on lag, delay, and prediction steps.
 
     Args:
@@ -301,7 +304,7 @@ if __name__ == "__main__":
 
 
 
-    model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
+    model_name = 'Gievenbeck_SingleNode_LSTM_20240328'
 
     model_folder = os.path.join('05_models', model_name)
 
@@ -314,14 +317,19 @@ if __name__ == "__main__":
     delay = 0
     p_steps = 6
 
-    # x_testing, y_testing = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-    #                                 out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    x_testing_seq, y_testing_seq = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                    out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
     
-    # print(y_testing.shape)
-    # print(x_testing.shape)
+    print(x_testing_seq.shape)
+    print(y_testing_seq.shape)
 
     x_testing, y_testing = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
     
-    print(y_testing)
+    print(y_testing[0].shape)
     print(x_testing.shape)
+
+    # Check if the data of single and multi sequencing function is the same
+    print('Singel', y_testing_seq[0])
+    print('Multi', y_testing[0][0])
+

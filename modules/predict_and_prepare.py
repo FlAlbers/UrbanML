@@ -82,7 +82,7 @@ if __name__ == '__main__':
     import pickle
     import os
     from sklearn.preprocessing import MinMaxScaler
-    from modules.sequence_and_normalize import sequence_list
+    from sequence_and_normalize import sequence_list
   
     # Assign all relevant paths
     model_folder = os.path.join('05_models', 'Gievenbeck_SingleNode_LSTM_20240328')

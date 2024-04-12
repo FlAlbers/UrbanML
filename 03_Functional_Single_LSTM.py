@@ -11,7 +11,7 @@
 
 import numpy as np
 import pandas as pd
-from extract_sim_data import multi_node
+from extract_sim_data import multi_node, single_node
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error , mean_absolute_error
@@ -27,12 +27,12 @@ import os
 
 
 folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
-sims_data = multi_node(folder_path_sim, ['R0019769'],resample = '5min') # ['R0019769','R0019717']
+sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min') # ['R0019769','R0019717']
 
 model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
 model_folder = os.path.join('05_models', model_name)
 
-random_seed = 42
+random_seed = 1
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
 # Splitting train data again into train and validation sets
@@ -71,7 +71,7 @@ lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
-x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_train, y_train = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
 print(y_train[0].shape)
@@ -86,10 +86,10 @@ https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cros
 
 '''
 
-x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_val, y_val = sequence_for_sequential(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
-print(y_val[0].shape)
+print(y_val.shape)
 print(y_val[1].shape)
 
 '''
@@ -103,10 +103,11 @@ print(y_val[1].shape)
 
 # Define model layers.
 input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
-first_dense = Dense(units=32)(input_layer) #units = number of hidden layers
+# first_flatten = Flatten()(input_layer)
+lstm_1 = LSTM(units=32, activation='relu')(input_layer) #units = number of hidden layers
 # Y1 output will be fed from the first dense
-first_flatten = Flatten()(first_dense)
-y1_output = Dense(units=p_steps, name='Q1')(first_flatten)
+
+y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
 
 # # For second output define the second dense layer and the second output
 # second_dense = Dense(units=32, activation='relu')(input_layer)
@@ -115,7 +116,7 @@ y1_output = Dense(units=p_steps, name='Q1')(first_flatten)
 # y2_output = Dense(units=p_steps, name='Q2')(second_flatten)
 
 # Define the model with the input layer and a list of output layers
-model = Model(inputs=input_layer, outputs=[y1_output])
+model = Model(inputs=input_layer, outputs=y1_output)
 
 # # For Second output
 # model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
@@ -150,6 +151,9 @@ pyplot.show()
 
 # Saving the model, the scalers and the test data
 save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data)
+#Save learning curve
+figure_path = os.path.join(model_folder, 'learning_curve.png')
+pyplot.savefig(figure_path)
 
 # Load the model, the scalers and the test data
 model, in_scaler, out_scaler, train_data, val_data, test_data = load_model(model_folder)
@@ -185,4 +189,19 @@ plt.plot(y_revert[n], label='Actual')
 plt.ylim(bottom=0)  # Set y-axis to start from zero
 plt.legend()
 plt.show()
+
+####################################################
+# test area
+# view5 = sims_data[1][1]
+# view1 = test[1][1]
+
+# view1[(view1.index >= '2024-01-01 07:30:00') & (view1.index <= '2024-01-01 07:40:00')]
+# view5[(view5.index >= '2024-01-01 07:30:00') & (view5.index <= '2024-01-01 07:40:00')]
+
+# mean_sims_data = np.mean(sims_data[1][1])
+# mean_test = np.mean(test[1][1])
+
+
+
+
 

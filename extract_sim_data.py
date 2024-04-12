@@ -110,11 +110,15 @@ if __name__ == '__main__':
 
 
     folder_path = os.path.join('03_sim_data', 'sim_test')
-    nodes = ['R0019769', 'R0019768']
-    sims_data = multi_node(folder_path, nodes = None,resample = '5min')
+    # nodes = ['R0019769', 'R0019768']
+    sims_data = multi_node(folder_path, nodes = 'R0019769',resample = '5min')
     # sims_data = single_node(folder_path, 'R0019769',resample = '5min')
     # sims_data
+    sims_data_single = single_node(folder_path, 'R0019769',resample = '5min')
 
+    print(sims_data_single[0][1].sum())
+    print(sims_data[0][1].sum())
+    #ist gleich
 
     ##############################################################
     # Test Plot

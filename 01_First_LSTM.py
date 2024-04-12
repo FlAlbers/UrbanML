@@ -11,7 +11,7 @@
 
 import numpy as np
 import pandas as pd
-from extract_sim_data import multi_node
+from extract_sim_data import single_node
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error , mean_absolute_error
@@ -21,25 +21,25 @@ from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
-from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
+from sequence_and_normalize import sequence_for_sequential, sequence_sample_random, sequence_list
 import os
 import joblib
 import pickle
+from modules.save_load_model import save_model, load_model
 
-tf.test.is_built_with_cuda()
-devices = tf.config.list_physical_devices('GPU')
-print(len(devices)) 
+
 
 folder_path_sim = os.path.join('03_sim_data', 'inp')
-sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min')
+sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 # test = single_node(folder_path, 'R0019769')
 # sims_data[1][1]['Q_out'].values
 
 # intervall = sims_data[0][1].index[1] - sims_data[0][1].index[0]
 # int(intervall.total_seconds() / 60)
 
-model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
-random_seed = 42
+model_folder = os.path.join('05_models', 'Gievenbeck_SingleNode_LSTM_20240328')
+
+random_seed = 1
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
 
@@ -85,7 +85,7 @@ lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
-x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_train, y_train = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
 print(y_train.shape)
@@ -98,7 +98,7 @@ Maybe block chaining cross validation
 https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
 '''
 
-x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_val, y_val = sequence_for_sequential(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
 print(y_val.shape)
@@ -107,18 +107,13 @@ print(y_val.shape)
 model = Sequential()
 model.add(LSTM(32, input_shape=(lag, len(in_vars)))) # input shape: (sequence length, number of features)
 #units = number of hidden layers
-model.add(Dense(p_steps)) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
-model.compile(loss='mae', optimizer='adam')
+model.add(Dense(p_steps, activation='relu')) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
+model.compile(loss='mse', optimizer='adam')
 model.summary()
 
 # Train the model
 # Fit network
-lstm = model.fit(x_train, y_train,
-epochs=60,
-batch_size=10,
-validation_data=(x_val, y_val),
-verbose=2,
-shuffle=False)
+lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
 
 pyplot.plot(lstm.history['loss'], '--', label='train loss')
 pyplot.plot(lstm.history['val_loss'], label='test loss')
@@ -127,7 +122,14 @@ pyplot.show()
 
 ###############################################################
 # Saving and loading the model
+# Saving the model, the scalers and the test data
+save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data)
+# Save the pyplot figure to the model_folder
+figure_path = os.path.join(model_folder, 'learning_curve.png')
+pyplot.savefig(figure_path)
 
+# Load the model, the scalers and the test data
+model, in_scaler, out_scaler, train_data, val_data, test_data = load_model(model_folder)
 # Create model_folder if not existing
 if not os.path.exists(model_folder):
     os.makedirs(model_folder)
