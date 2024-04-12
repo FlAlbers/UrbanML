@@ -15,13 +15,14 @@ def plot_seq_i_d_Q(in_seq, out_act, out_pred, event_meta, interval):
     fig, axs = plt.subplots(figsize=(6, 4))
 
     ax1 = axs
-    ax1.set_title(f"Ereignis: {event_meta['Ereignis']}, {round(event_meta['total precipitation'])} mm, {event_meta['duration']} min", pad=20)
+    ax1.set_title(f"Ereignis: {event_meta['event type']}, {round(event_meta['total precipitation'])} mm, {event_meta['duration']} min", pad=20)
     x = in_seq[:,0]  # Set x-axis values
     ax1.bar(x, in_seq[:,1], color='blue', label='iN', width=interval, align='edge')
     top_lim = max(max(in_seq[:,1]), 50)
     ax1.set_ylim(bottom=0, top=top_lim)  # Set y-axis to start from zero
     ax1.set_ylabel('Niederschlagsintensität iN [mm/h]')
     ax1.set_xlabel('Ereignisdauer [min]')
+    # ax1.set_xlim(left=0)
     ax1.legend(loc='upper left', bbox_to_anchor=(0, 1.1), frameon=False, fontsize='small')
 
     # Create a twin axis on the right side
