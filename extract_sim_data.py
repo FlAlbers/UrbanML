@@ -20,7 +20,6 @@ from pyswmm import Nodes, Simulation, Output, NodeSeries, SystemSeries
 import os
 import pandas as pd
 
-
 def single_node(folder_path, node = 'R0019769', resample = '1min'):
     '''
     Extract flow data of a single node from .out files and resample the data to a given time interval.
@@ -59,7 +58,7 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
 
 def multi_node(folder_path, nodes = None, resample = '5min'):
     '''
-    Extract flow data of a multiple nodes from .out files and resample the data to a given time interval.
+    Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
 
     Parameters:
         - folder_path: path to the folder containing the .out files
@@ -73,7 +72,7 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
         - R... - total_inflow [m³/s] - data for each node like: R0019769,  R0019768, ...
 
     Returns:
-        - list of with data for each simulation
+        - list of data for each simulation
     '''
     # if nodes is None:
     if nodes is None:
@@ -103,7 +102,27 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
 
     return sims_data
 
-                
+def extract_and_1h_weather_prediction(folder_path, nodes = None, resample = '5min'):
+    '''
+    Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
+
+    Parameters:
+        - folder_path: path to the folder containing the .out files
+        - nodes: list of node names like in inp files
+        - resample: resample time
+            - example -> '5min' or '1min' ...
+
+    Dataoutput:
+        - duration - event duration [min] - duration is negative during the start buffer where no precipitation is present
+        - p - rainfall [mm/h]
+        - R... - total_inflow [m³/s] - data for each node like: R0019769,  R0019768, ...
+
+    Returns:
+        - list of with data for each simulation
+    '''
+    sims_data = multi_node(folder_path, nodes, resample)
+
+    return sims_data
 
 # Test Area for testing the functions
 if __name__ == '__main__':

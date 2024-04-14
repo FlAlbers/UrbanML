@@ -11,38 +11,30 @@
 
 import numpy as np
 import pandas as pd
-from extract_sim_data import single_node
+from extract_sim_data import multi_node, single_node
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error , mean_absolute_error
-from keras.models import Sequential, model_from_json
-from keras.layers import Dense
+from keras.models import Sequential, Model, model_from_json
+from keras.layers import Dense, Input, Flatten
 from keras.layers import LSTM
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
 from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
-import os
-import joblib
-import pickle
 from modules.save_load_model import save_model, load_model
+import os
 
 
+folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
+sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min') # ['R0019769','R0019717']
 
-folder_path_sim = os.path.join('03_sim_data', 'inp')
-sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
-# test = single_node(folder_path, 'R0019769')
-# sims_data[1][1]['Q_out'].values
-
-# intervall = sims_data[0][1].index[1] - sims_data[0][1].index[0]
-# int(intervall.total_seconds() / 60)
-
-model_folder = os.path.join('05_models', 'Gievenbeck_SingleNode_LSTM_20240328')
+model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
+model_folder = os.path.join('05_models', model_name)
 
 random_seed = 1
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
-
 # Splitting train data again into train and validation sets
 train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed)
 
@@ -54,30 +46,24 @@ n = next steps
 k = number of sequences in sample
 
 Data:
-R... = total_inflow [m³/s]
+Q_out = total_inflow [m³/s]
 p = rainfall [mm/h]
 '''
 
 in_vars=['duration', 'p']
 out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
+# out_vars=['Q_out']
+
 ############ Fitting scalers for Normalization of data
 # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
 in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
-out_concat  = np.array(pd.concat([sample[1][['Q_out']] for sample in train_val_data], axis=0))
+out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
 
 # Fitting the scalers for in and out data
 in_scaler = MinMaxScaler(feature_range=(0, 1))
 out_scaler = MinMaxScaler(feature_range=(0, 1))
 in_scaler = in_scaler.fit(in_concat)
 out_scaler = out_scaler.fit(out_concat)
-
-### Scaler check if before and after is the same
-# out_norm = out_scaler.transform(out_concat)
-# out_back = out_scaler.inverse_transform(out_norm)
-# sum(out_concat[:,0])
-# sum(out_norm[:,0])
-# sum(out_back[:,0])
-
 
 #########################################################################
 # Use Sequence function to create x and y data for train and test
@@ -88,7 +74,8 @@ p_steps = 6
 x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
-print(y_train.shape)
+print(y_train[0].shape)
+print(y_train[1].shape)
 
 '''
 Include crossvalidation here to split the training data into training and validation data for crossvalidation
@@ -96,24 +83,61 @@ https://scikit-learn.org/stable/modules/cross_validation.html
 
 Maybe block chaining cross validation
 https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
+
 '''
 
 x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
 print(y_val.shape)
+print(y_val[1].shape)
 
-# Set up the LSTM model
-model = Sequential()
-model.add(LSTM(32, input_shape=(lag, len(in_vars)))) # input shape: (sequence length, number of features)
-#units = number of hidden layers
-model.add(Dense(p_steps, activation='relu')) # dense is the number of output neurons or the number of predictions. This could also be achieved with return_sequence =ture and TimeDistributed option
-model.compile(loss='mse', optimizer='adam')
+'''
+1. When sequencing all output sequences need to be in one array containing all output sequences (like a list)
+2. Make multiple dense output layers for each output sequence respectively
+3. assign input and output layers to model
+'''
+
+########### Stacked LSTM
+# https://colab.research.google.com/drive/1sZqFWkWTmv-htvL7OwiFMHX022Gy0Syf
+
+# Define model layers.
+input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
+lstm_1 = LSTM(units=32, activation='relu')(input_layer) #units = number of hidden layers
+y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
+
+# # For second output define the second dense layer and the second output
+# second_dense = Dense(units=32, activation='relu')(input_layer)
+# # Y2 output will be fed from the second dense
+# second_flatten = Flatten()(second_dense)
+# y2_output = Dense(units=p_steps, name='Q2')(second_flatten)
+
+# Define the model with the input layer and a list of output layers
+model = Model(inputs=input_layer, outputs=y1_output)
+
+# # For Second output
+# model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+
+model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae', 'mape'])
 model.summary()
 
+
 # Train the model
-# Fit network
 lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
+
+x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                  out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+print(x_test.shape)
+# print(y_test[1].shape)
+
+# scores = model.evaluate(x_test, y_test , verbose=1)
+# print('MSE = ', round(scores,4))
+# print('MAE = ', round(scores[2],4))
+# print('MAPE = ', round(scores[3],2) , '%')
+
+
+# cvscores.append(scores * 100)
+# print("%.2f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 
 pyplot.plot(lstm.history['loss'], '--', label='train mse')
 pyplot.plot(lstm.history['val_loss'], label='test mse')
@@ -124,6 +148,7 @@ pyplot.show()
 # Saving and loading the model
 # Saving the model, the scalers and the test data
 save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data, lag, delay, p_steps, random_seed, in_vars, out_vars)
+
 # Save the pyplot figure to the model_folder
 pyplot.plot(lstm.history['loss'], '--', label='train mse')
 pyplot.plot(lstm.history['val_loss'], label='test mse')
@@ -133,58 +158,9 @@ pyplot.savefig(figure_path)
 
 # Load the model, the scalers and the test data
 model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(model_folder)
-# Create model_folder if not existing
-if not os.path.exists(model_folder):
-    os.makedirs(model_folder)
-
-# Assign all relevant paths
-model_path = os.path.join(model_folder, 'model.json')
-weights_path = os.path.join(model_folder, 'model.weights.h5')
-in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
-out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
-test_data_path = os.path.join(model_folder, 'test_data')
 
 
-model_json = model.to_json()
-with open(model_path, "w") as json_file:
-    json_file.write(model_json)
-
-# Saving weights to HDF5
-model.save_weights(weights_path)
-
-# Save the scalers
-joblib.dump(in_scaler, in_scaler_path)
-joblib.dump(out_scaler, out_scaler_path)
-
-# Save test data
-with open(test_data_path, 'wb') as file:
-    pickle.dump(test_data, file)
-print("Saved model, sacler and test data to disk")
-
-# load json and create model
-json_file = open(model_path, 'r')
-loaded_model_json = json_file.read()
-json_file.close()
-loaded_model = model_from_json(loaded_model_json)
-# load weights into new model
-loaded_model.load_weights(weights_path)
-
-loaded_model.summary()
-
-
-# Load the scalers
-loaded_in_scaler = joblib.load(in_scaler_path)
-loaded_out_scaler = joblib.load(out_scaler_path)
-
-# Load the test data
-with open(test_data_path, 'rb') as file:
-    test_data_load = pickle.load(file)
-
-print("Loaded model from disk")
-
-
-
-###############################################################
+################################################################
 # Test the model
 
 # sequence data to list structure
@@ -192,7 +168,7 @@ seq_test = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scale
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(seq_test[0])
 
-x_test, y_test = sequence_sample_random(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, random_seed=random_seed)
 print(x_test.shape)
 print(y_test.shape)
@@ -230,25 +206,3 @@ plt.show()
 
 
 
-
-
-
-# Example DataFrame for Store A
-data_a = {'Date': pd.date_range(start='2023-01-01', periods=5, freq='D'),
-          'Sales': [100, 150, 130, 120, 160],
-          'Visitors': [50, 60, 55, 45, 65]}
-df_a = pd.DataFrame(data_a).set_index('Date')
-
-def create_sequences(df, sequence_length):
-    X, Y = [], []
-    for i in range(len(df) - sequence_length):
-        X.append(df.iloc[i:(i + sequence_length), :].values)
-        Y.append(df.iloc[i + sequence_length, :].values)
-    return np.array(X), np.array(Y)
-
-# Using a sequence length of 3
-sequence_length = 3
-X, Y = create_sequences(df_a[['Sales', 'Visitors']], sequence_length)
-
-print("X shape:", X.shape)  # (samples, timesteps, features)
-print("Y shape:", Y.shape)  # (samples, features)

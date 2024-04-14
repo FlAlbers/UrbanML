@@ -27,9 +27,9 @@ import os
 
 
 folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
-sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min') # ['R0019769','R0019717']
+sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min') # ['R0019769','R0019717']
 
-model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
+model_name = 'Gievenbeck_LSTM_Single_1h_P_20240408'
 model_folder = os.path.join('05_models', model_name)
 
 random_seed = 1
@@ -46,7 +46,7 @@ n = next steps
 k = number of sequences in sample
 
 Data:
-Q_out = total_inflow [m³/s]
+R... = total_inflow [m³/s]
 p = rainfall [mm/h]
 '''
 
@@ -68,8 +68,8 @@ out_scaler = out_scaler.fit(out_concat)
 #########################################################################
 # Use Sequence function to create x and y data for train and test
 lag = int(2 * 60 / 5)
-delay = 0
-p_steps = 6
+delay = -12
+p_steps = 12
 
 x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
@@ -139,21 +139,24 @@ print(x_test.shape)
 # cvscores.append(scores * 100)
 # print("%.2f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 
-pyplot.plot(lstm.history['loss'], '--', label='train loss')
-pyplot.plot(lstm.history['val_loss'], label='validation loss')
+pyplot.plot(lstm.history['loss'], '--', label='train mse')
+pyplot.plot(lstm.history['val_loss'], label='test mse')
 pyplot.legend()
 pyplot.show()
 
 ###############################################################
-
+# Saving and loading the model
 # Saving the model, the scalers and the test data
-save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data)
-#Save learning curve
+save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data, lag, delay, p_steps, random_seed, in_vars, out_vars)
+# Save the pyplot figure to the model_folder
+pyplot.plot(lstm.history['loss'], '--', label='train mse')
+pyplot.plot(lstm.history['val_loss'], label='test mse')
+pyplot.legend()
 figure_path = os.path.join(model_folder, 'learning_curve.png')
 pyplot.savefig(figure_path)
 
 # Load the model, the scalers and the test data
-model, in_scaler, out_scaler, train_data, val_data, test_data = load_model(model_folder)
+model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(model_folder)
 
 
 ################################################################
