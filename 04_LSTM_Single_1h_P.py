@@ -143,7 +143,6 @@ pyplot.plot(lstm.history['loss'], '--', label='train mse')
 pyplot.plot(lstm.history['val_loss'], label='test mse')
 pyplot.legend()
 pyplot.show()
-
 ###############################################################
 # Saving and loading the model
 # Saving the model, the scalers and the test data
