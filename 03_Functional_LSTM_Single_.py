@@ -36,8 +36,8 @@ random_seed = 1
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
 # Splitting train data again into train and validation sets
-train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed)
-
+random_seed_2 = 24
+train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed_2)
 '''
 Window parameters:
 l = lag

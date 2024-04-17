@@ -11,7 +11,7 @@
 
 import numpy as np
 import pandas as pd
-from extract_sim_data import single_node
+from modules.extract_sim_data import single_node
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error , mean_absolute_error
@@ -44,7 +44,8 @@ random_seed = 1
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
 
 # Splitting train data again into train and validation sets
-train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed)
+random_seed_2 = 24
+train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed_2)
 
 '''
 Window parameters:

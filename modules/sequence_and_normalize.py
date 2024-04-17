@@ -196,7 +196,7 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler
             type = 'Aufgezeichnet'
         
         if 'duration' in sample[1]:
-            event_duration = int(sample[1]['duration'].iloc[-1] - buffer_time.total_seconds() / 60)
+            event_duration = int(sample[1]['duration'].iloc[-1] - buffer_time.total_seconds() / 60 * 2 + intervall*2)
         else:
             event_duration = None
         if 'p' in sample[1]:

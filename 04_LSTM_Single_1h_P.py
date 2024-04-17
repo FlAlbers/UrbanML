@@ -11,9 +11,9 @@
 
 import numpy as np
 import pandas as pd
-from extract_sim_data import multi_node, single_node
+from modules.extract_sim_data import multi_node, single_node
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_squared_error , mean_absolute_error
 from keras.models import Sequential, Model, model_from_json
 from keras.layers import Dense, Input, Flatten
@@ -32,11 +32,13 @@ sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min') # ['R00197
 model_name = 'Gievenbeck_LSTM_Single_1h_P_20240408'
 model_folder = os.path.join('05_models', model_name)
 
-random_seed = 1
+random_seed = 8
 # Splitting data into train and test sets
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
 # Splitting train data again into train and validation sets
-train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed)
+
+random_seed_2 = 24
+train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed_2)
 
 '''
 Window parameters:
@@ -81,8 +83,6 @@ print(y_train[1].shape)
 Include crossvalidation here to split the training data into training and validation data for crossvalidation
 https://scikit-learn.org/stable/modules/cross_validation.html
 
-Maybe block chaining cross validation
-https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cross-validation-mu/
 
 '''
 
@@ -139,8 +139,10 @@ print(x_test.shape)
 # cvscores.append(scores * 100)
 # print("%.2f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 
-pyplot.plot(lstm.history['loss'], '--', label='train mse')
-pyplot.plot(lstm.history['val_loss'], label='test mse')
+pyplot.plot(lstm.history['loss'], '--', label='Training')
+pyplot.plot(lstm.history['val_loss'], label='Validierung')
+pyplot.xlabel('Trainingsepoche')
+pyplot.ylabel('Mittlerer quadratischer Fehler [-]')
 pyplot.legend()
 pyplot.show()
 ###############################################################
@@ -148,8 +150,10 @@ pyplot.show()
 # Saving the model, the scalers and the test data
 save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data, lag, delay, p_steps, random_seed, in_vars, out_vars)
 # Save the pyplot figure to the model_folder
-pyplot.plot(lstm.history['loss'], '--', label='train mse')
-pyplot.plot(lstm.history['val_loss'], label='test mse')
+pyplot.plot(lstm.history['loss'], '--', label='Training')
+pyplot.plot(lstm.history['val_loss'], label='Validierung')
+pyplot.xlabel('Trainingsepoche')
+pyplot.ylabel('Mittlerer quadratischer Fehler [-]')
 pyplot.legend()
 figure_path = os.path.join(model_folder, 'learning_curve.png')
 pyplot.savefig(figure_path)
