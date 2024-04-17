@@ -28,8 +28,8 @@ def plot_seq_i_d_Q(in_seq, out_act, out_pred, event_meta, interval):
     # Create a twin axis on the right side
     # Plotting the predicted and actual values in the corresponding subplot
     ax2 = ax1.twinx()
-    ax2.plot(out_pred[:, 0], out_pred[:, 1], color='red', label='Q Vorh.')
-    ax2.plot(out_act[:, 0], out_act[:, 1], color='green', label='Q Sim.')
+    ax2.plot(out_pred[:, 0], out_pred[:, 1], color='red', label='Q Vorhers.')
+    ax2.plot(out_act[:, 0], out_act[:, 1], color='green', label='Q Wahr')
     ax2.set_ylim(bottom=0)  # Set y-axis to start from zero
     ax2.set_ylabel('Abfluss Q [m³/s]')
     ax2.legend(loc='upper left', bbox_to_anchor=(0.3, 1.1), frameon=False, ncol=2, fontsize='small')
