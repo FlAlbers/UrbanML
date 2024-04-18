@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from modules.sequence_and_normalize import sequence_data
 
 def pred_all_list(model, out_scaler, event_list, event_list_trans):
     """
@@ -26,24 +27,36 @@ def pred_all_list(model, out_scaler, event_list, event_list_trans):
     return new_list
 
 
-def pred_all(model, out_scaler, x_values):
+def pred_inverse_all(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag, delay, p_steps):
     """
     Perform predictions using a given model and scaler on a list of sequences sorted by event.
 
     Args:
+        raw_data: The raw data used for sequence data preparation.
         model: The trained model used for predictions.
-        out_scaler: The scaler used to transform the predictions back to their original scale.
-        event_list: The list of event sequences to be predicted.
-        event_list_trans: The transformed version of the event list for the model.
+        in_vars: The input variables used for sequence data preparation.
+        out_vars: The output variables used for sequence data preparation.
+        in_scaler: The scaler used for input variable normalization.
+        out_scaler: The scaler used for output variable normalization.
+        lag: The lag value used for sequence data preparation.
+        delay: The delay value used for sequence data preparation.
+        p_steps: The number of prediction steps used for sequence data preparation.
 
     Returns:
-        pred_all: A array with all prediction sequences appended.
+        pred_inverse: An array with all prediction sequences transformed back to the original unit.
+        true_inverse: An array with all true sequences transformed back to the original unit.
     """
-    Predict = model.predict(x_values)
-    Predict_invert = out_scaler.inverse_transform(Predict)
-    pred_all = np.append(Predict_invert.reshape((len(Predict_invert), len(Predict_invert[0]), 1)))
+    
+    x, y = sequence_data(raw_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                            out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
-    return pred_all
+    pred = model.predict(x, verbose=1)
+    pred_inverse = out_scaler.inverse_transform(pred)
+    if y.shape[-1] == 1:
+        y = y.squeeze()
+    true_inverse = out_scaler.inverse_transform(y)
+
+    return true_inverse, pred_inverse
 
 # dimensionsänderung beachten wenn lstm von dense auf sequence umgestellt wird
 def pred_and_add_durIndex(model, out_scaler, event_list, event_list_trans):
