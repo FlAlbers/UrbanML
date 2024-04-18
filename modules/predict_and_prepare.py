@@ -1,8 +1,7 @@
 import numpy as np
 import copy
 
-# dimensionsänderung beachten wenn lstm von dense auf sequence umgestellt wird
-def pred_all(model, out_scaler, event_list, event_list_trans):
+def pred_all_list(model, out_scaler, event_list, event_list_trans):
     """
     Perform predictions using a given model and scaler on a list of sequences sorted by event.
 
@@ -25,6 +24,26 @@ def pred_all(model, out_scaler, event_list, event_list_trans):
         new_list[n_sample].append(Predict_invert.reshape((len(Predict_invert), len(Predict_invert[0]), 1)))
 
     return new_list
+
+
+def pred_all(model, out_scaler, x_values):
+    """
+    Perform predictions using a given model and scaler on a list of sequences sorted by event.
+
+    Args:
+        model: The trained model used for predictions.
+        out_scaler: The scaler used to transform the predictions back to their original scale.
+        event_list: The list of event sequences to be predicted.
+        event_list_trans: The transformed version of the event list for the model.
+
+    Returns:
+        pred_all: A array with all prediction sequences appended.
+    """
+    Predict = model.predict(x_values)
+    Predict_invert = out_scaler.inverse_transform(Predict)
+    pred_all = np.append(Predict_invert.reshape((len(Predict_invert), len(Predict_invert[0]), 1)))
+
+    return pred_all
 
 # dimensionsänderung beachten wenn lstm von dense auf sequence umgestellt wird
 def pred_and_add_durIndex(model, out_scaler, event_list, event_list_trans):
@@ -126,7 +145,7 @@ if __name__ == '__main__':
     
     seq_test = pred_and_add_durIndex(model, out_scaler, seq_test, seq_test_trans)
     
-    seq_test = pred_all(model, out_scaler, seq_test, seq_test_trans)
+    seq_test = pred_all_list(model, out_scaler, seq_test, seq_test_trans)
     
     seq_test[0][1]
     seq_test[0][2]
