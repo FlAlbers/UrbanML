@@ -36,8 +36,8 @@ sims_data = single_node(folder_path_sim, 'R0019769',resample = '5min')
 
 # intervall = sims_data[0][1].index[1] - sims_data[0][1].index[0]
 # int(intervall.total_seconds() / 60)
-
-model_folder = os.path.join('05_models', 'Gievenbeck_SingleNode_LSTM_20240328')
+model_name = 'Gievenbeck_SingleNode_LSTM_20240328'
+model_folder = os.path.join('05_models', model_name)
 
 random_seed = 1
 # Splitting data into train and test sets
@@ -124,7 +124,9 @@ pyplot.show()
 ###############################################################
 # Saving and loading the model
 # Saving the model, the scalers and the test data
-save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data, lag, delay, p_steps, random_seed, in_vars, out_vars)
+save_model(model_name = model_name,model=model, save_folder=model_folder, in_scaler=in_scaler, out_scaler=out_scaler, 
+           train_data=train_data, val_data=val_data, test_data=test_data, lag=lag, delay=delay,
+           prediction_steps=p_steps, seed_train_val_test=random_seed, seed_train_val=random_seed_2, in_vars=in_vars, out_vars=out_vars)
 # Save the pyplot figure to the model_folder
 pyplot.plot(lstm.history['loss'], '--', label='train mse')
 pyplot.plot(lstm.history['val_loss'], label='test mse')
@@ -134,55 +136,6 @@ pyplot.savefig(figure_path)
 
 # Load the model, the scalers and the test data
 model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(model_folder)
-# Create model_folder if not existing
-if not os.path.exists(model_folder):
-    os.makedirs(model_folder)
-
-# Assign all relevant paths
-model_path = os.path.join(model_folder, 'model.json')
-weights_path = os.path.join(model_folder, 'model.weights.h5')
-in_scaler_path = os.path.join(model_folder, 'in_scaler.pkl')
-out_scaler_path = os.path.join(model_folder, 'out_scaler.pkl')
-test_data_path = os.path.join(model_folder, 'test_data')
-
-
-model_json = model.to_json()
-with open(model_path, "w") as json_file:
-    json_file.write(model_json)
-
-# Saving weights to HDF5
-model.save_weights(weights_path)
-
-# Save the scalers
-joblib.dump(in_scaler, in_scaler_path)
-joblib.dump(out_scaler, out_scaler_path)
-
-# Save test data
-with open(test_data_path, 'wb') as file:
-    pickle.dump(test_data, file)
-print("Saved model, sacler and test data to disk")
-
-# load json and create model
-json_file = open(model_path, 'r')
-loaded_model_json = json_file.read()
-json_file.close()
-loaded_model = model_from_json(loaded_model_json)
-# load weights into new model
-loaded_model.load_weights(weights_path)
-
-loaded_model.summary()
-
-
-# Load the scalers
-loaded_in_scaler = joblib.load(in_scaler_path)
-loaded_out_scaler = joblib.load(out_scaler_path)
-
-# Load the test data
-with open(test_data_path, 'rb') as file:
-    test_data_load = pickle.load(file)
-
-print("Loaded model from disk")
-
 
 
 ###############################################################

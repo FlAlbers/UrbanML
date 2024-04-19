@@ -5,6 +5,13 @@ from modules.save_load_model import load_model
 from sklearn.metrics import mean_squared_error
 import math
 
+def mae_mse_rmse(true, pred):
+    mse = np.square(np.subtract(true,pred)).mean()
+    rmse = math.sqrt(mse)
+    mae = np.subtract(true,pred).mean()
+    eval_dict = {'mae': mae, 'mse': mse, 'rmse': rmse}
+    return mae, mse, rmse
+
 def rmse_from_raw(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag, delay, p_steps):
     """
     Calculate the root mean squared error (RMSE) for a given model and one or multiple event datasets.

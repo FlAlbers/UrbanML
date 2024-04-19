@@ -104,10 +104,11 @@ print(y_val[1].shape)
 # Define model layers.
 input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
 lstm_1 = LSTM(units=32, return_sequences=True,activation='relu')(input_layer) #units = number of hidden layers
-lstm_2 = LSTM(units=64, activation='relu')(lstm_1) #units = number of hidden layers
+lstm_2 = LSTM(units=64, return_sequences=True, activation='relu')(lstm_1) #units = number of hidden layers
+lstm_3 = LSTM(units=128, activation='relu')(lstm_2) #units = number of hidden layers
 
 
-y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_2)
+y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_3)
 
 # # For second output define the second dense layer and the second output
 # second_dense = Dense(units=32, activation='relu')(input_layer)
@@ -152,7 +153,10 @@ pyplot.show()
 ###############################################################
 # Saving and loading the model
 # Saving the model, the scalers and the test data
-save_model(model, model_folder, in_scaler, out_scaler, train_data, val_data, test_data, lag, delay, p_steps, random_seed, in_vars, out_vars)
+save_model(model_name = model_name,model=model, save_folder=model_folder, in_scaler=in_scaler, out_scaler=out_scaler, 
+           train_data=train_data, val_data=val_data, test_data=test_data, lag=lag, delay=delay,
+           prediction_steps=p_steps, seed_train_val_test= random_seed, seed_train_val=random_seed_2, in_vars=in_vars, out_vars=out_vars)
+
 # Save the pyplot figure to the model_folder
 pyplot.plot(lstm.history['loss'], '--', label='Training')
 pyplot.plot(lstm.history['val_loss'], label='Validierung')

@@ -12,7 +12,7 @@ import joblib
 import os
 import pickle
 
-def save_model(model, save_folder, in_scaler, out_scaler, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, random_seed=None, in_vars=None, out_vars=None):
+def save_model(model_name = None, model =None, save_folder = None, in_scaler = None, out_scaler = None, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, seed_train_val_test = None, seed_train_val=None, in_vars=None, out_vars=None):
     """
     Saves the model, input scaler, output scaler, and test data to disk.
 
@@ -60,27 +60,15 @@ def save_model(model, save_folder, in_scaler, out_scaler, train_data=None, val_d
     
     print("Saved model, scaler, and test data to disk")
 
-    # Set default value for lag if None
-    if lag is None:
-        lag = 'unknown'
-    if delay is None:
-        delay = 'unknown'    
-    if prediction_steps is None:
-        prediction_steps = 'unknown'
-    if random_seed is None:
-        random_seed = 'unknown'
-    if in_vars is None:
-        in_vars = 'unknown'
-    if out_vars is None:
-        out_vars = 'unknown'
-
 
     # Create data_info dictionary
     data_info_dict = {
+        'model_name': model_name,
         'lag': lag,
         'delay': delay,
         'prediction_steps': prediction_steps,
-        'random_seed': random_seed,
+        'seed_train_val_test': seed_train_val_test,
+        'seed_train_val': seed_train_val,
         'in_vars': in_vars,
         'out_vars': out_vars
     }
@@ -160,6 +148,43 @@ def load_model(model_folder):
     print("Loaded model from disk")
 
     return model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict
+
+def load_model_container(model_folder):
+    """
+    Loads the model, input scaler, output scaler, and test data from disk.
+    
+    Args:
+        model_folder (str): The folder path where the model and related files are saved.
+
+    Returns:
+        model (keras.models.Model): The loaded model.
+        in_scaler: The loaded input scaler.
+        out_scaler: The loaded output scaler.
+        test_data: The loaded test data.
+
+    Use like this:
+        model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(model_folder)
+    """
+    model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict = load_model(model_folder)
+
+    model_container = {
+        'name' : data_info_dict['model_name'],
+        'model': model,
+        'in_scaler': in_scaler,
+        'out_scaler': out_scaler,
+        'train_data': train_data,
+        'validation_data': validation_data,
+        'test_data': test_data,
+        'lag': data_info_dict['lag'],
+        'delay': data_info_dict['delay'],
+        'prediction_steps': data_info_dict['prediction_steps'],
+        'seed_train_val_test': data_info_dict['seed_train_val_test'],
+        'seed_train_val': data_info_dict['seed_train_val'],
+        'in_vars': data_info_dict['in_vars'],
+        'out_vars': data_info_dict['out_vars']
+    }
+
+    return model_container
 
 # Test Area for functions
 if __name__ == '__main__':
