@@ -10,7 +10,7 @@ def mae_mse_rmse(true, pred):
     rmse = math.sqrt(mse)
     mae = np.subtract(true,pred).mean()
     eval_dict = {'mae': mae, 'mse': mse, 'rmse': rmse}
-    return mae, mse, rmse
+    return eval_dict
 
 def rmse_from_raw(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag, delay, p_steps):
     """
