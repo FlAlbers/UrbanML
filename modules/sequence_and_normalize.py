@@ -196,7 +196,13 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler
             type = 'Aufgezeichnet'
         
         if 'duration' in sample[1]:
-            event_duration = int(sample[1]['duration'].iloc[-1] - buffer_time.total_seconds() / 60 * 2 + intervall*2)
+            # Filter the DataFrame
+            p_greater_0 = sample[1][sample[1]['p'] > 0]
+            # Get the index of the last entry with a value > 0            
+            first_index = p_greater_0['p'].index[0]
+            last_index = p_greater_0['p'].index[-1]
+            event_duration = int((last_index - first_index).total_seconds() / 60)
+            # event_duration = int(sample[1]['duration'].iloc[-1] - buffer_time.total_seconds() / 60 * 2 + intervall*2)
         else:
             event_duration = None
         if 'p' in sample[1]:
@@ -211,7 +217,6 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler
         meta_dictionary = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'interval': intervall, 'event type': type, 'lag': l, 'delay': d, 'prediction steps': n}
     	# !!!!!^^^^^^^^ changes here will affect other functions ^^^^^^^^^^!!!!!!!!!!!
      
-
         # append event dictionary to list
         sequenced_list.append([])
         sequenced_list[len(sequenced_list)-1].append(meta_dictionary)
@@ -252,7 +257,7 @@ if __name__ == "__main__":
 
     model_folder = os.path.join('05_models', model_name)
 
-    model, in_scaler, out_scaler, train_data, val_data, test_data = load_model(model_folder)
+    model, in_scaler, out_scaler, train_data, val_data, test_data, model_info = load_model(model_folder)
 
     in_vars=['duration', 'p']
     out_vars = [col for col in test_data[0][1].columns if col not in in_vars]
@@ -261,17 +266,21 @@ if __name__ == "__main__":
     delay = 0
     p_steps = 6
 
-    x_testing_seq, y_testing_seq = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                    out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-    print(y_testing_seq.shape)    
-    print(x_testing_seq.shape)
+    # x_testing_seq, y_testing_seq = sequence_for_sequential(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+    #                                 out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    # print(y_testing_seq.shape)    
+    # print(x_testing_seq.shape)
 
 
-    x_testing, y_testing = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+    # x_testing, y_testing = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+    #                                 out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+
+    # print(y_testing.shape)
+    # print(x_testing.shape)
+
+    seq_test, seq_test_trans = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-    
-    print(y_testing.shape)
-    print(x_testing.shape)
+
 
     # Check if the data of single and multi sequencing function is the same
     print('Singel', y_testing_seq[0])
