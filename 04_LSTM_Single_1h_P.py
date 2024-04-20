@@ -103,7 +103,7 @@ print(y_val[1].shape)
 
 # Define model layers.
 input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
-lstm_1 = LSTM(units=32, activation='relu')(input_layer) #units = number of hidden layers
+lstm_1 = LSTM(units=128, activation='relu')(input_layer) #units = number of hidden layers
 y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
 
 # # For second output define the second dense layer and the second output
@@ -121,13 +121,12 @@ model = Model(inputs=input_layer, outputs=y1_output)
 model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae', 'mape'])
 model.summary()
 
-
 # Train the model
 lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
 
-x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                  out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-print(x_test.shape)
+# x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+#                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+# print(x_test.shape)
 # print(y_test[1].shape)
 
 # scores = model.evaluate(x_test, y_test , verbose=1)

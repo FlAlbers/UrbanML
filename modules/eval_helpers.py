@@ -8,7 +8,7 @@ import math
 def mae_mse_rmse(true, pred):
     mse = np.square(np.subtract(true,pred)).mean()
     rmse = math.sqrt(mse)
-    mae = np.subtract(true,pred).mean()
+    mae = abs(np.subtract(true,pred)).mean()
     eval_dict = {'mae': mae, 'mse': mse, 'rmse': rmse}
     return eval_dict
 
