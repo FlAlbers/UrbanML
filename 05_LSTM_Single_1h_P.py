@@ -18,6 +18,7 @@ from sklearn.metrics import mean_squared_error , mean_absolute_error
 from keras.models import Sequential, Model, model_from_json
 from keras.layers import Dense, Input, Flatten
 from keras.layers import LSTM
+from keras.backend import clear_session
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
@@ -29,7 +30,7 @@ import os
 folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
 sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min') # ['R0019769','R0019717']
 
-model_name = 'Gievenbeck_LSTM_Single_1h_P_20240408'
+model_name = 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
 model_folder = os.path.join('05_models', model_name)
 
 random_seed = 8
@@ -37,7 +38,7 @@ random_seed = 8
 train_val_data, test_data = train_test_split(sims_data, test_size=0.1, random_state=random_seed)
 # Splitting train data again into train and validation sets
 
-random_seed_2 = 24
+random_seed_2 = 50
 train_data, val_data = train_test_split(train_val_data, test_size=0.2, random_state=random_seed_2)
 
 '''
@@ -58,8 +59,8 @@ out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
 
 ############ Fitting scalers for Normalization of data
 # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
-in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
-out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
+in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_data], axis=0))
+out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_data], axis=0))
 
 # Fitting the scalers for in and out data
 in_scaler = MinMaxScaler(feature_range=(0, 1))
@@ -103,7 +104,7 @@ print(y_val[1].shape)
 
 # Define model layers.
 input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
-lstm_1 = LSTM(units=128, activation='relu')(input_layer) #units = number of hidden layers
+lstm_1 = LSTM(units=32, activation='relu')(input_layer) #units = number of hidden layers
 y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
 
 # # For second output define the second dense layer and the second output
@@ -122,7 +123,7 @@ model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae', 'mape'])
 model.summary()
 
 # Train the model
-lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=False)
+lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=True)
 
 # x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
 #                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
