@@ -11,8 +11,10 @@ from keras.models import Model, model_from_json
 import joblib
 import os
 import pickle
+import csv
+import pandas as pd
 
-def save_model(model_name = None, model =None, save_folder = None, in_scaler = None, out_scaler = None, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, seed_train_val_test = None, seed_train_val=None, in_vars=None, out_vars=None):
+def save_model(model_name = None, model =None, save_folder = None, in_scaler = None, out_scaler = None, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, seed_train_val_test = None, seed_train_val=None, in_vars=None, out_vars=None, cv_scores=None):
     """
     Saves the model, input scaler, output scaler, and test data to disk.
 
@@ -58,8 +60,7 @@ def save_model(model_name = None, model =None, save_folder = None, in_scaler = N
             with open(data[0], 'wb') as file:
                 pickle.dump(data[1], file)
     
-    print("Saved model, scaler, and test data to disk")
-
+    
 
     # Create data_info dictionary
     data_info_dict = {
@@ -77,6 +78,12 @@ def save_model(model_name = None, model =None, save_folder = None, in_scaler = N
     data_info_path = os.path.join(save_folder, 'data_info_dict.pkl')
     with open(data_info_path, 'wb') as file:
         pickle.dump(data_info_dict, file)
+
+    # Save cv_scores as CSV
+    cv_scores_path = os.path.join(save_folder, 'cv_scores.csv')
+    cv_scores.to_csv(cv_scores_path, index=True, header=True)
+    
+    print("Saved model to disk")
 
     return None
 
@@ -106,6 +113,7 @@ def load_model(model_folder):
     validation_data_path = os.path.join(model_folder, 'validation_data')
     test_data_path = os.path.join(model_folder, 'test_data')
     data_info_path = os.path.join(model_folder, 'data_info_dict.pkl')
+    cv_scores_path = os.path.join(model_folder, 'cv_scores.csv')
 
     # Load the model and the scalers
     # load json and create model
@@ -144,10 +152,16 @@ def load_model(model_folder):
     else:
         data_info_dict = 'unknown'
     
+    if os.path.exists(cv_scores_path):
+        cv_scores = pd.read_csv(cv_scores_path)
+    else:
+        cv_scores = 'unknown'
+    
+
 
     print("Loaded model from disk")
 
-    return model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict
+    return model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict, cv_scores
 
 def load_model_container(model_folder):
     """
@@ -165,7 +179,7 @@ def load_model_container(model_folder):
     Use like this:
         model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(model_folder)
     """
-    model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict = load_model(model_folder)
+    model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict, cv_scores = load_model(model_folder)
 
     model_container = {
         'name' : data_info_dict['model_name'],
@@ -181,11 +195,36 @@ def load_model_container(model_folder):
         'seed_train_val_test': data_info_dict['seed_train_val_test'],
         'seed_train_val': data_info_dict['seed_train_val'],
         'in_vars': data_info_dict['in_vars'],
-        'out_vars': data_info_dict['out_vars']
+        'out_vars': data_info_dict['out_vars'],
+        'cv_scores': cv_scores
     }
 
     return model_container
 
+def save_model_container(model_container, save_folder = None):
+    model_name = model_container['name']
+    model = model_container['model']
+    in_scaler = model_container['in_scaler']
+    out_scaler = model_container['out_scaler']
+    train_data = model_container['train_data']
+    val_data = model_container['validation_data']
+    test_data = model_container['test_data']
+    lag = model_container['lag']
+    delay = model_container['delay']
+    prediction_steps = model_container['prediction_steps']
+    seed_train_val_test = model_container['seed_train_val_test']
+    seed_train_val = model_container['seed_train_val']
+    in_vars = model_container['in_vars']
+    out_vars = model_container['out_vars']
+    cv_scores = model_container['cv_scores']
+
+    save_model(model_name = model_name, model =model, save_folder = save_folder, in_scaler = in_scaler, 
+               out_scaler = out_scaler, train_data=train_data, val_data = val_data, test_data=test_data, lag =lag, 
+               delay=delay, prediction_steps=prediction_steps, seed_train_val_test = seed_train_val_test, 
+               seed_train_val=seed_train_val, in_vars=in_vars, out_vars=out_vars, cv_scores=cv_scores)
+    
+    return None
+    
 # Test Area for functions
 if __name__ == '__main__':
     model_name = 'Gievenbeck_DoubleNodeTest_LSTM_20240408'
