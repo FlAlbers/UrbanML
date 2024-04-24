@@ -54,9 +54,10 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
                 current_sim = current_sim[['duration', 'p', 'Q_out']]
                 sims_data.append((file_name, current_sim))
 
+
     return sims_data
 
-def multi_node(folder_path, nodes = None, resample = '5min'):
+def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0.01):
     '''
     Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
 
@@ -65,6 +66,11 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
         - nodes: list of node names like in inp files
         - resample: resample time
             - example -> '5min' or '1min' ...
+        - threshold_multiplier: multiplier of the max output value for calculating the threshold for minimal values at the end of each event
+            - range: 0 to 1
+            - example -> 0.01 for 1 % of the maximum value
+                - if the max output value is 3, and the threshold_multiplier is 0.01, the threshold is 0.03. If the value is below the threshold, it is set to 0 
+                - if the threshold is set to 0, no threshold is applied
 
     Dataoutput:
         - duration - event duration [min] - duration is negative during the start buffer where no precipitation is present
@@ -100,39 +106,46 @@ def multi_node(folder_path, nodes = None, resample = '5min'):
                 current_sim = current_sim[['duration'] + list(current_sim.columns[:-1])]
                 sims_data.append((file_name, current_sim))
 
-    return sims_data
+    # 1 % Schwelle in der Nachlaufzeit
+    if threshold_multiplier > 0:
+        max_values = pd.DataFrame(columns=nodes)
+        for sim in sims_data:
+            max_val = sim[1][nodes].values.max(axis=0)
+            max_val = max_val.reshape(1, -1)
+            max_values = pd.concat([max_values,pd.DataFrame(max_val, columns=nodes)], axis=0)
 
-def extract_and_1h_weather_prediction(folder_path, nodes = None, resample = '5min'):
-    '''
-    Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
+        
+        thresholds = max_values.max() * threshold_multiplier
 
-    Parameters:
-        - folder_path: path to the folder containing the .out files
-        - nodes: list of node names like in inp files
-        - resample: resample time
-            - example -> '5min' or '1min' ...
+        last_p_durs = pd.DataFrame(columns=['duration'])
 
-    Dataoutput:
-        - duration - event duration [min] - duration is negative during the start buffer where no precipitation is present
-        - p - rainfall [mm/h]
-        - R... - total_inflow [m³/s] - data for each node like: R0019769,  R0019768, ...
+        for sim in sims_data:
+            for node in nodes:
+                sim[1][node][sim[1][node] < thresholds[node]] = 0
+            last_p = pd.DataFrame([sim[1][sim[1]['p'] > 0]['duration'].iloc[-1]], columns=['duration'])
+            last_p_durs = pd.concat([last_p_durs, last_p])
 
-    Returns:
-        - list of with data for each simulation
-    '''
-    sims_data = multi_node(folder_path, nodes, resample)
+        for i, (sim_id, sim_df) in enumerate(sims_data):
+            updated_df = sim_df[(sim_df['duration'] <= last_p_durs['duration'].iloc[i]) | (sim_df[nodes] > 0).any(axis=1)]
+            sims_data[i] = (sim_id, updated_df)
+    
+        
+
 
     return sims_data
 
 # Test Area for testing the functions
 if __name__ == '__main__':
 
-
+    threshold = 0.01
     folder_path = os.path.join('03_sim_data', 'sim_test')
-    # nodes = ['R0019769', 'R0019768']
-    sims_data = multi_node(folder_path, nodes = 'R0019769',resample = '5min')
+    nodes = ['R0019769', 'R0019768']
+    sims_data = multi_node(folder_path, nodes = nodes,resample = '5min')
     # sims_data = single_node(folder_path, 'R0019769',resample = '5min')
     # sims_data
+
+    
+
     sims_data_single = single_node(folder_path, 'R0019769',resample = '5min')
 
     print(sims_data_single[0][1].sum())

@@ -30,7 +30,7 @@ import os
 # importlib.reload(modules.save_load_model)
 
 folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
-sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min') # ['R0019769','R0019717']
+sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min', threshold_multiplier=0.01) # ['R0019769','R0019717']
 
 model_name = 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
 model_folder = os.path.join('05_models', model_name)
