@@ -66,7 +66,7 @@ euler_typ = 2
 # Start time of the simulation
 start_time = pd.to_datetime('2024-01-01 00:00')
 # Buffer time before and after the rainfall event
-buffer_time = pd.Timedelta('2h')
+buffer_time = pd.Timedelta('1h')
 # Name of the Kostra time series to be included in the inp file
 TSnameKostra = 'Kostra'
 # Name of the measured time series to be included in the inp file

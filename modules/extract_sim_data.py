@@ -57,7 +57,7 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
 
     return sims_data
 
-def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0.01):
+def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0.01, min_duration = 60):
     '''
     Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
 
@@ -71,6 +71,7 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
             - example -> 0.01 for 1 % of the maximum value
                 - if the max output value is 3, and the threshold_multiplier is 0.01, the threshold is 0.03. If the value is below the threshold, it is set to 0 
                 - if the threshold is set to 0, no threshold is applied
+        - min_duration: minimal duration of the event in minutes
 
     Dataoutput:
         - duration - event duration [min] - duration is negative during the start buffer where no precipitation is present
@@ -126,12 +127,12 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
             last_p_durs = pd.concat([last_p_durs, last_p])
 
         for i, (sim_id, sim_df) in enumerate(sims_data):
-            updated_df = sim_df[(sim_df['duration'] <= last_p_durs['duration'].iloc[i]) | (sim_df[nodes] > 0).any(axis=1)]
+            first_p = pd.DataFrame([sim[1][sim[1]['p'] > 0]['duration'].iloc[0]], columns=['duration'])
+            
+            min_dur = first_p['duration'][0] + min_duration
+            updated_df = sim_df[(sim_df['duration'] <= last_p_durs['duration'].iloc[i]) | (sim_df[nodes] > 0).any(axis=1) | (sim_df['duration'] <= min_dur)]
             sims_data[i] = (sim_id, updated_df)
     
-        
-
-
     return sims_data
 
 # Test Area for testing the functions
