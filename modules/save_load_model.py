@@ -14,7 +14,7 @@ import pickle
 import csv
 import pandas as pd
 
-def save_model(model_name = None, model =None, save_folder = None, in_scaler = None, out_scaler = None, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, seed_train_val_test = None, seed_train_val=None, in_vars=None, out_vars=None, cv_scores=None):
+def save_model(model_name = None, model =None, save_folder = None, in_scaler = None, out_scaler = None, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, seed_train_val_test = None, seed_train_val=None, in_vars=None, out_vars=None, cv_scores=None, cv_models=None):
     """
     Saves the model, input scaler, output scaler, and test data to disk.
 
@@ -82,13 +82,18 @@ def save_model(model_name = None, model =None, save_folder = None, in_scaler = N
     # Save cv_scores as CSV
     cv_scores_path = os.path.join(save_folder, 'cv_scores.csv')
     cv_scores.to_csv(cv_scores_path, index=True, header=True)
+
+    # Save cv_models with pickle
+    cv_models_path = os.path.join(save_folder, 'cv_models.pkl')
+    with open(cv_models_path, 'wb') as file:
+        pickle.dump(cv_models, file)
     
     print("Saved model to disk")
 
     return None
 
 
-def load_model(model_folder):
+def load_model(model_folder, print_info = True):
     """
     Loads the model, input scaler, output scaler, and test data from disk.
     
@@ -114,6 +119,7 @@ def load_model(model_folder):
     test_data_path = os.path.join(model_folder, 'test_data')
     data_info_path = os.path.join(model_folder, 'data_info_dict.pkl')
     cv_scores_path = os.path.join(model_folder, 'cv_scores.csv')
+    cv_models_path = os.path.join(model_folder, 'cv_models.pkl')
 
     # Load the model and the scalers
     # load json and create model
@@ -156,14 +162,20 @@ def load_model(model_folder):
         cv_scores = pd.read_csv(cv_scores_path)
     else:
         cv_scores = 'unknown'
+
+    if os.path.exists(cv_models_path):
+        with open(cv_models_path, 'rb') as file:
+            cv_models = pickle.load(file)
+    else:
+        cv_models = 'unknown'
     
 
+    if print_info == True:
+        print("Loaded model from disk")
 
-    print("Loaded model from disk")
+    return model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict, cv_scores, cv_models
 
-    return model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict, cv_scores
-
-def load_model_container(model_folder):
+def load_model_container(model_folder, print_info = True):
     """
     Loads the model, input scaler, output scaler, and test data from disk.
     
@@ -179,7 +191,7 @@ def load_model_container(model_folder):
     Use like this:
         model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(model_folder)
     """
-    model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict, cv_scores = load_model(model_folder)
+    model, in_scaler, out_scaler, train_data, validation_data, test_data, data_info_dict, cv_scores, cv_models = load_model(model_folder, print_info)
 
     model_container = {
         'name' : data_info_dict['model_name'],
@@ -196,7 +208,8 @@ def load_model_container(model_folder):
         'seed_train_val': data_info_dict['seed_train_val'],
         'in_vars': data_info_dict['in_vars'],
         'out_vars': data_info_dict['out_vars'],
-        'cv_scores': cv_scores
+        'cv_scores': cv_scores,
+        'cv_models': cv_models
     }
 
     return model_container
@@ -217,11 +230,12 @@ def save_model_container(model_container, save_folder = None):
     in_vars = model_container['in_vars']
     out_vars = model_container['out_vars']
     cv_scores = model_container['cv_scores']
+    cv_models = model_container['cv_models']
 
     save_model(model_name = model_name, model =model, save_folder = save_folder, in_scaler = in_scaler, 
                out_scaler = out_scaler, train_data=train_data, val_data = val_data, test_data=test_data, lag =lag, 
                delay=delay, prediction_steps=prediction_steps, seed_train_val_test = seed_train_val_test, 
-               seed_train_val=seed_train_val, in_vars=in_vars, out_vars=out_vars, cv_scores=cv_scores)
+               seed_train_val=seed_train_val, in_vars=in_vars, out_vars=out_vars, cv_scores=cv_scores, cv_models=cv_models)
     
     return None
     

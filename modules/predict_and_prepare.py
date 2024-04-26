@@ -50,7 +50,7 @@ def pred_inverse_all(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, 
     x, y = sequence_data(raw_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
-    pred = model.predict(x, verbose=1)
+    pred = model.predict(x, verbose=0)
     pred_inverse = out_scaler.inverse_transform(pred)
     if y.shape[-1] == 1:
         y = y.squeeze()

@@ -108,7 +108,8 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             'seed_train_val': seed_train_val,
             'in_vars': in_vars,
             'out_vars': out_vars,
-            'history': lstm.history
+            'history': lstm.history,
+            'cv_models': models
         }
 
         models.append(model_container)
