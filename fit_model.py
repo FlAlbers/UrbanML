@@ -18,7 +18,7 @@ from matplotlib import pyplot
 import tensorflow as tf
 from keras.backend import clear_session
 from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
-from modules.save_load_model import save_model, load_model, save_model_container
+from modules.save_load_model import save_model, load_model, save_model_container, save_model_containerOLD, load_model_container, load_model_containerOLD
 from modules.extract_sim_data import multi_node, single_node
 import os
 
@@ -43,7 +43,7 @@ Data:
     p = rainfall [mm/h]
 '''
 
-def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, lag = None, delay = None, p_steps = None, in_vars = None, out_vars = None, seed_train_val_test = None, seed_train_val = None):
+def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, lag = None, delay = None, p_steps = None, in_vars = None, out_vars = None, seed_train_val_test = None, seed_train_val = None, shuffle = True):
 
     out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
     
@@ -51,6 +51,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
 
     def set_model():
         clear_session()
+        del model
         model = Model()
         model = model_init
         return model
@@ -91,7 +92,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
         # Train the model
         model = set_model()
 
-        lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=True)
+        lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
 
         model_container = {
             'name' : model_name,
@@ -109,7 +110,6 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             'in_vars': in_vars,
             'out_vars': out_vars,
             'history': lstm.history,
-            'cv_models': models
         }
 
         models.append(model_container)
@@ -126,8 +126,17 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
     # Select the best Model
     select_id = cv_scores['val_loss'].idxmin()
 
-    model_container = models[select_id]
-    model_container['cv_scores'] = cv_scores
+    
+    # model_container = models[select_id]
+    # model_container['cv_scores'] = cv_scores
+    # model_container['cv_models']= models
+    # model_container['select_id'] = select_id
+
+    model_dict = {
+        f'model_{i}': models[i] for i in range(len(models))
+    }
+    model_dict['cv_scores'] = cv_scores
+    model_dict['select_id'] = select_id
 
     # Plot the learning curve
     # pyplot.plot(model_container['history']['loss'], '--', label='Training')
@@ -138,21 +147,64 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
     # pyplot.show()
     ###############################################################
     # Saving and loading the model
-    save_model_container(model_container, save_folder=save_folder)
+    # save_model_container(model_dict, save_folder=save_folder)
 
     # Save the pyplot figure to the model_folder
-    pyplot.plot(model_container['history']['loss'], '--', label='Training')
-    pyplot.plot(model_container['history']['val_loss'], label='Validierung')
-    pyplot.xlabel('Trainingsepoche')
-    pyplot.ylabel('Mittlerer quadratischer Fehler [-]')
-    pyplot.legend()
-    figure_path = os.path.join(save_folder, 'learning_curve.png')
-    pyplot.savefig(figure_path)
+    # pyplot.plot(model_container['history']['loss'], '--', label='Training')
+    # pyplot.plot(model_container['history']['val_loss'], label='Validierung')
+    # pyplot.xlabel('Trainingsepoche')
+    # pyplot.ylabel('Mittlerer quadratischer Fehler [-]')
+    # pyplot.legend()
+    # figure_path = os.path.join(save_folder, 'learning_curve.png')
+    # pyplot.savefig(model_container)
 
+    return model_dict
 # Load the model, the scalers and the test data
 # model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(save_folder)
+    # model_container = load_model_container(save_folder)
 
 
+if __name__ == '__main__':
+    model_name = 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
+    save_folder = os.path.join('05_models', model_name)
+    folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
 
+    interval = 5
+    lag = int(2 * 60 / interval)
+    delay = -12
+    p_steps = 12
+    min_duration = p_steps * interval
+    in_vars=['duration', 'p']
+    seed_train_val_test = 8
+    seed_train_val = 50
+    cv_splits = 5
+    sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min', threshold_multiplier=0.01, min_duration=min_duration) # ['R0019769','R0019717']
 
+    # Splitting data into train and test sets
+    test_size=0.1
 
+    ####### Define Model
+    model = Model()
+
+    # Define model layers.
+    input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
+    lstm_1 = LSTM(units=32, activation='relu')(input_layer) #units = number of hidden layers
+    y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
+
+    # # For second output define the second dense layer and the second output
+    # second_dense = Dense(units=32, activation='relu')(input_layer)
+    # # Y2 output will be fed from the second dense
+    # second_flatten = Flatten()(second_dense)
+    # y2_output = Dense(units=p_steps, name='Q2')(second_flatten)
+
+    # Define the model with the input layer and a list of output layers
+    model = Model(inputs=input_layer, outputs=y1_output)
+
+    # # For Second output
+    # model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+
+    model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae', 'mape'])
+    model.summary()
+
+    # Train the model
+    # fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, model_init = model, test_size= test_size, cv_splits= cv_splits, lag= lag, delay= delay, p_steps= p_steps, in_vars= in_vars, out_vars= None , seed_train_val_test= seed_train_val_test, seed_train_val= seed_train_val)

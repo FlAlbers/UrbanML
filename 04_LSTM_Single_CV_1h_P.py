@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib import pyplot
 import tensorflow as tf
 from modules.sequence_and_normalize import sequence_data, sequence_sample_random, sequence_list
-from modules.save_load_model import save_model, load_model, save_model_container
+from modules.save_load_model import save_model, load_model, save_model_containerOLD
 import os
 
 # import modules.save_load_model
@@ -177,7 +177,7 @@ model_container['cv_scores'] = cv_scores
 # pyplot.show()
 ###############################################################
 # Saving and loading the model
-save_model_container(model_container, save_folder=model_folder)
+save_model_containerOLD(model_container, save_folder=model_folder)
 
 # Save the pyplot figure to the model_folder
 pyplot.plot(model_container['history']['loss'], '--', label='Training')
