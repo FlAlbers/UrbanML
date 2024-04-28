@@ -21,6 +21,7 @@ from modules.sequence_and_normalize import sequence_data, sequence_sample_random
 from modules.save_load_model import save_model, load_model, save_model_container, save_model_containerOLD, load_model_container, load_model_containerOLD
 from modules.extract_sim_data import multi_node, single_node
 import os
+from keras.models import clone_model
 
 # import modules.save_load_model
 # import importlib
@@ -43,17 +44,20 @@ Data:
     p = rainfall [mm/h]
 '''
 
-def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, lag = None, delay = None, p_steps = None, in_vars = None, out_vars = None, seed_train_val_test = None, seed_train_val = None, shuffle = True):
+def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, 
+              lag = None, delay = None, p_steps = None, in_vars = None, out_vars = None, 
+              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20):
 
     out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
     
     train_val_data, test_data = train_test_split(sims_data, test_size=test_size, random_state=seed_train_val_test)
-
+        
     def set_model():
         clear_session()
-        del model
-        model = Model()
-        model = model_init
+        # model = Model()
+        model = clone_model(model_init)
+        model.compile(loss=loss, optimizer='adam', metrics=['mse', 'mae'])
+        model.summary()
         return model
 
     ################# Training models with cross validation
@@ -62,45 +66,121 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
     fold_nr = 0
     cv = KFold(n_splits=cv_splits, shuffle=True, random_state=seed_train_val)
 
-    for train, val in cv.split(train_val_data):
-        train_data = [train_val_data[i] for i in train]
-        val_data = [train_val_data[i] for i in val]
+    if cv_splits > 1:
         
-        ############### Fitting scalers for Normalization of data
-        # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
-        in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_data], axis=0))
-        out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_data], axis=0))
+        for train, val in cv.split(train_val_data):
+            train_data = [train_val_data[i] for i in train]
+            val_data = [train_val_data[i] for i in val]
+            
+            ############### Fitting scalers for Normalization of data
+            # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
+            in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_data], axis=0))
+            out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_data], axis=0))
 
-        # Fitting the scalers for in and out data
-        in_scaler = MinMaxScaler(feature_range=(0, 1))
-        out_scaler = MinMaxScaler(feature_range=(0, 1))
-        in_scaler = in_scaler.fit(in_concat)
-        out_scaler = out_scaler.fit(out_concat)
+            # Fitting the scalers for in and out data
+            in_scaler = MinMaxScaler(feature_range=(0, 1))
+            out_scaler = MinMaxScaler(feature_range=(0, 1))
+            in_scaler = in_scaler.fit(in_concat)
+            out_scaler = out_scaler.fit(out_concat)
 
 
-        ################# Make sequences out of the data
-        x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+            ################# Make sequences out of the data
+            x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                                out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+            print(x_train.shape)
+            print(y_train[0].shape)
+            print(y_train[1].shape)
+
+            x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
-        print(x_train.shape)
-        print(y_train[0].shape)
-        print(y_train[1].shape)
 
-        x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+
+            # Train the model
+            model = set_model()
+            # model = shuffle_weights(model)
+
+            lstm = model.fit(x_train, y_train,epochs=epochs,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
+
+            model_container = {
+                'name' : model_name,
+                'model': clone_model(model),
+                'in_scaler': in_scaler,
+                'out_scaler': out_scaler,
+                'train_data': train_data,
+                'validation_data': val_data,
+                'test_data': test_data,
+                'lag': lag,
+                'delay': delay,
+                'prediction_steps': p_steps,
+                'seed_train_val_test': seed_train_val_test,
+                'seed_train_val': seed_train_val,
+                'in_vars': in_vars,
+                'out_vars': out_vars,
+                'history': lstm.history,
+            }
+
+            models.append(model_container)
+            loss_last = lstm.history['loss'][-1]
+            val_loss_last = lstm.history['val_loss'][-1]
+            new_row = pd.DataFrame({'loss': [loss_last], 'val_loss': [val_loss_last]})
+            cv_scores = pd.concat([cv_scores, new_row], ignore_index=True)
+
+            fold_nr += 1
+
+        for fold_id in range(len(models)):
+            print(f"Fold: {fold_id}, loss = {cv_scores['loss'][fold_id]}, val_loss = {cv_scores['val_loss'][fold_id]}")
+
+        # Select the best Model
+        select_id = cv_scores['val_loss'].idxmin()
+
+        
+        # model_container = models[select_id]
+        # model_container['cv_scores'] = cv_scores
+        # model_container['cv_models']= models
+        # model_container['select_id'] = select_id
+
+        model_dict = {
+            f'model_{i}': models[i] for i in range(len(models))
+        }
+        model_dict['cv_scores'] = cv_scores
+        model_dict['select_id'] = select_id
+
+
+#################################################################################################################
+    # Resume Training with the best model
+    ############### Fitting scalers for Normalization of data
+    # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
+    in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
+    out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
+
+    # Fitting the scalers for in and out data
+    in_scaler = MinMaxScaler(feature_range=(0, 1))
+    out_scaler = MinMaxScaler(feature_range=(0, 1))
+    in_scaler = in_scaler.fit(in_concat)
+    out_scaler = out_scaler.fit(out_concat)
+
+
+    ################# Make sequences out of the data
+    x_dev, y_dev = sequence_data(train_val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                         out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
+    x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                                        out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
-        # Train the model
-        model = set_model()
+    if cv_splits < 2:
+        selected_model = set_model()
+    else:
+        selected_model = model_dict[f'model_{select_id}']['model']
 
-        lstm = model.fit(x_train, y_train,epochs=20,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
+    lstm = selected_model.fit(x_dev, y_dev,epochs=60,batch_size=10,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
 
-        model_container = {
+    model_container = {
             'name' : model_name,
-            'model': model,
+            'model': clone_model(selected_model),
             'in_scaler': in_scaler,
             'out_scaler': out_scaler,
-            'train_data': train_data,
-            'validation_data': val_data,
+            'train_data': train_val_data,
+            # 'validation_data': val_data,
             'test_data': test_data,
             'lag': lag,
             'delay': delay,
@@ -112,51 +192,9 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             'history': lstm.history,
         }
 
-        models.append(model_container)
-        loss = lstm.history['loss'][-1]
-        val_loss = lstm.history['val_loss'][-1]
-        new_row = pd.DataFrame({'loss': [loss], 'val_loss': [val_loss]})
-        cv_scores = pd.concat([cv_scores, new_row], ignore_index=True)
 
-        fold_nr += 1
+    model_dict['selected_model'] = model_container
 
-    for fold_id in range(len(models)):
-        print(f"Fold: {fold_id}, loss = {cv_scores['loss'][fold_id]}, val_loss = {cv_scores['val_loss'][fold_id]}")
-
-    # Select the best Model
-    select_id = cv_scores['val_loss'].idxmin()
-
-    
-    # model_container = models[select_id]
-    # model_container['cv_scores'] = cv_scores
-    # model_container['cv_models']= models
-    # model_container['select_id'] = select_id
-
-    model_dict = {
-        f'model_{i}': models[i] for i in range(len(models))
-    }
-    model_dict['cv_scores'] = cv_scores
-    model_dict['select_id'] = select_id
-
-    # Plot the learning curve
-    # pyplot.plot(model_container['history']['loss'], '--', label='Training')
-    # pyplot.plot(model_container['history']['val_loss'], label='Validierung')
-    # pyplot.xlabel('Trainingsepoche')
-    # pyplot.ylabel('Mittlerer quadratischer Fehler [-]')
-    # pyplot.legend()
-    # pyplot.show()
-    ###############################################################
-    # Saving and loading the model
-    # save_model_container(model_dict, save_folder=save_folder)
-
-    # Save the pyplot figure to the model_folder
-    # pyplot.plot(model_container['history']['loss'], '--', label='Training')
-    # pyplot.plot(model_container['history']['val_loss'], label='Validierung')
-    # pyplot.xlabel('Trainingsepoche')
-    # pyplot.ylabel('Mittlerer quadratischer Fehler [-]')
-    # pyplot.legend()
-    # figure_path = os.path.join(save_folder, 'learning_curve.png')
-    # pyplot.savefig(model_container)
 
     return model_dict
 # Load the model, the scalers and the test data
@@ -177,11 +215,12 @@ if __name__ == '__main__':
     in_vars=['duration', 'p']
     seed_train_val_test = 8
     seed_train_val = 50
-    cv_splits = 5
+    cv_splits = 2
     sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min', threshold_multiplier=0.01, min_duration=min_duration) # ['R0019769','R0019717']
-
+    shuffle = True
     # Splitting data into train and test sets
     test_size=0.1
+    epochs = 2
 
     ####### Define Model
     model = Model()
@@ -203,8 +242,11 @@ if __name__ == '__main__':
     # # For Second output
     # model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
 
-    model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae', 'mape'])
-    model.summary()
+    # model.compile(loss='mse', optimizer='adam', metrics=['mse', 'mae', 'mape'])
+    # model.summary()
 
     # Train the model
-    # fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, model_init = model, test_size= test_size, cv_splits= cv_splits, lag= lag, delay= delay, p_steps= p_steps, in_vars= in_vars, out_vars= None , seed_train_val_test= seed_train_val_test, seed_train_val= seed_train_val)
+    model_container = fit_model(model_name = model_name, save_folder= save_folder, sims_data= sims_data, 
+                            model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
+                            delay = delay, p_steps = p_steps, in_vars = in_vars, out_vars = None , 
+                            seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, shuffle=shuffle, epochs=epochs)

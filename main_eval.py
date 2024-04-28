@@ -11,7 +11,7 @@ base_path = os.path.join(os.getcwd(), base_name)
 new_path = os.path.join(os.getcwd(), '07_model_compare',  new_name)
 output_format = 'html'
 
-model_names = ['Gievenbeck_LSTM_Single_MSE2024-04-27', 'Gievenbeck_LSTM_Single_MAE2024-04-27', 'Gievenbeck_LSTM_Single_MAPE2024-04-27']
+model_names = ['Gievenbeck_LSTM_Single_MSE2024-04-28', 'Gievenbeck_LSTM_Single_MAE2024-04-28', 'Gievenbeck_LSTM_Single_MAPE2024-04-28']
 # model_names = ['Gievenbeck_LSTM_Single_Thresh_1h_P_20240408','Gievenbeck_LSTM_Single_CV_1h_P_20240408']
 model_alias = ['"MSE"','"MAE"','"MAPE"']
 base_folder = os.path.join('05_models', 'loss_functions_compare')

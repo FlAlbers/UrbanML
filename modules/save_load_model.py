@@ -280,19 +280,40 @@ def load_model_container(save_folder, print_info = True):
         if file.endswith('.json'):
             i += 1
 
+    # Load all cv models
     for i in range(i):
         model_save_name = 'model_' + str(i) + '.json'
         model_path = os.path.join(save_folder, model_save_name)
         weights_save_name = 'model_' + str(i) + '.weights.h5'
         weights_path = os.path.join(save_folder, weights_save_name)
+
+        if os.path.exists(model_path):
+            json_file = open(model_path, 'r')
+            loaded_model_json = json_file.read()
+            json_file.close()
+            loaded_model = model_from_json(loaded_model_json)
+            # load weights into new model
+            loaded_model.load_weights(weights_path)
+            m_name = 'model_' + str(i)
+            model_container[m_name]['model'] = loaded_model
+
+    # Load the selected model
+    try:
+        model_save_name = 'selected_model.json'
+        model_path = os.path.join(save_folder, model_save_name)
+        weights_save_name = 'selected_model.weights.h5'
+        weights_path = os.path.join(save_folder, weights_save_name)
+
         json_file = open(model_path, 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         loaded_model = model_from_json(loaded_model_json)
         # load weights into new model
         loaded_model.load_weights(weights_path)
-        m_name = 'model_' + str(i)
+        m_name = 'selected_model'
         model_container[m_name]['model'] = loaded_model
+    except:
+        pass
 
     return model_container
 
@@ -306,10 +327,9 @@ def save_model_container(model_container, save_folder = None):
     i = 0
     for key in model_container.keys():
         if key.startswith('model'):
-            
             model_save_name = 'model_' + str(i) + '.json'
-            model_path = os.path.join(save_folder, model_save_name)
             weights_save_name = 'model_' + str(i) + '.weights.h5'
+            model_path = os.path.join(save_folder, model_save_name)
             weights_path = os.path.join(save_folder, weights_save_name)
             model_json = model_container[key]['model'].to_json()
             with open(model_path, "w") as json_file:
@@ -317,12 +337,25 @@ def save_model_container(model_container, save_folder = None):
             # Saving weights to HDF5
             model_container[key]['model'].save_weights(weights_path)
             i+= 1
-
+        elif key == 'selected_model':
+            model_save_name = 'selected_model.json'
+            weights_save_name = 'selected_model.weights.h5'
+            model_path = os.path.join(save_folder, model_save_name)
+            weights_path = os.path.join(save_folder, weights_save_name)
+            model_json = model_container[key]['model'].to_json()
+            with open(model_path, "w") as json_file:
+                json_file.write(model_json)
+            # Saving weights to HDF5
+            model_container[key]['model'].save_weights(weights_path)
+            
     # Save the models temporarily and delete them from the model_container
     models = []
     for key in model_container.keys():
         if key.startswith('model'):
             models.append(model_container[key]['model'])
+            del model_container[key]['model']
+        elif key == 'selected_model':
+            selected_model = model_container[key]['model']
             del model_container[key]['model']
 
     # Save the model container without the models
@@ -335,6 +368,9 @@ def save_model_container(model_container, save_folder = None):
         if key.startswith('model'):
             model_container[key]['model'] = models[i]
             i += 1
+        elif key == 'selected_model':
+            model_container[key]['model'] = selected_model
+
     # plt.plot(model_container['history']['loss'], '--', label='Training')
     # plt.plot(model_container['history']['val_loss'], label='Validierung')
     # plt.xlabel('Trainingsepoche')
