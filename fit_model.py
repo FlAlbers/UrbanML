@@ -101,9 +101,12 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
 
             lstm = model.fit(x_train, y_train,epochs=epochs,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
 
+            model_copy = clone_model(model)
+            model_copy.compile(loss=loss, optimizer='adam', metrics=['mse', 'mae'])
+            model_copy.set_weights(model.get_weights())
             model_container = {
                 'name' : model_name,
-                'model': clone_model(model),
+                'model': model_copy,
                 'in_scaler': in_scaler,
                 'out_scaler': out_scaler,
                 'train_data': train_data,
@@ -171,12 +174,14 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
         selected_model = set_model()
     else:
         selected_model = model_dict[f'model_{select_id}']['model']
+        selected_model.compile(loss=loss, optimizer='adam', metrics=['mse', 'mae'])
+        selected_model.set_weights(model_dict[f'model_{select_id}']['model'].get_weights())
 
     lstm = selected_model.fit(x_dev, y_dev,epochs=60,batch_size=10,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
 
     model_container = {
             'name' : model_name,
-            'model': clone_model(selected_model),
+            'model': selected_model,
             'in_scaler': in_scaler,
             'out_scaler': out_scaler,
             'train_data': train_val_data,
