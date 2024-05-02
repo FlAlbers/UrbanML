@@ -22,6 +22,7 @@ from modules.save_load_model import save_model, load_model, save_model_container
 from modules.extract_sim_data import multi_node, single_node
 import os
 from keras.models import clone_model
+import time
 
 # import modules.save_load_model
 # import importlib
@@ -48,6 +49,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
               lag = None, delay = None, p_steps = None, in_vars = None, out_vars = None, 
               seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20):
 
+    total_start_time = time.time()
     out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
     
     train_val_data, test_data = train_test_split(sims_data, test_size=test_size, random_state=seed_train_val_test)
@@ -97,8 +99,11 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             # Train the model
             model = set_model()
             # model = shuffle_weights(model)
-
+            
+            start_train = time.time()
             lstm = model.fit(x_train, y_train,epochs=epochs,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
+            end_train = time.time()
+            train_time = end_train - start_train
 
             model_copy = clone_model(model)
             model_copy.compile(loss=loss, optimizer='adam', metrics=['mse', 'mae'])
@@ -119,6 +124,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
                 'in_vars': in_vars,
                 'out_vars': out_vars,
                 'history': lstm.history,
+                'train_time': train_time
             }
 
             models.append(model_container)
@@ -176,8 +182,12 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
         selected_model.compile(loss=loss, optimizer='adam', metrics=['mse', 'mae'])
         selected_model.set_weights(model_dict[f'model_{select_id}']['model'].get_weights())
 
+    start_train = time.time()
     lstm = selected_model.fit(x_dev, y_dev,epochs=60,batch_size=10,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
-
+    end_train = time.time()
+    total_end_time = time.time()
+    train_time = end_train - start_train + model_dict[f'model_{select_id}']['train_time']
+    total_train_time = total_end_time - total_start_time
     model_container = {
             'name' : model_name,
             'model': selected_model,
@@ -194,12 +204,11 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             'in_vars': in_vars,
             'out_vars': out_vars,
             'history': lstm.history,
+            'train_time': train_time,
+            'total_train_time': total_train_time
         }
 
-
     model_dict['selected_model'] = model_container
-
-
     return model_dict
 # Load the model, the scalers and the test data
 # model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(save_folder)
@@ -254,3 +263,5 @@ if __name__ == '__main__':
                             model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
                             delay = delay, p_steps = p_steps, in_vars = in_vars, out_vars = None , 
                             seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, shuffle=shuffle, epochs=epochs)
+    
+    model_container['selected_model']['total_train_time']
