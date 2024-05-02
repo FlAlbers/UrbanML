@@ -94,7 +94,6 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
-
             # Train the model
             model = set_model()
             # model = shuffle_weights(model)

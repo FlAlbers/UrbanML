@@ -18,6 +18,13 @@ model_alias = ['"Loss = MSE"','"Loss = MAE"','"Loss = MAPE"']
 models_folder = os.path.join('05_models', 'loss_functions_compare')
 compare_models(model_names, model_alias, export_name, models_folder)
 
+# Compare loss functions MSE, MAE
+export_name = 'Comp_Loss_MSE_MAE_' + str(date.today()) + '.ipynb'
+model_names = ['Gievenbeck_LSTM_Single_MSE2024-04-28', 'Gievenbeck_LSTM_Single_MAE2024-04-28']
+model_alias = ['"Loss = MSE"','"Loss = MAE"']
+models_folder = os.path.join('05_models', 'loss_functions_compare')
+compare_models(model_names, model_alias, export_name, models_folder)
+
 
 ###################################################
 # Compare shuffle = True and shuffle = False

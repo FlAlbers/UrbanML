@@ -212,10 +212,8 @@ def sequence_list(sims_data, in_vars=['duration', 'p'], out_vars=None, in_scaler
             precip_sum = None
             max_intensity = None
 
-        # create dictionary for event and model meta data
-        # !!!!!vvvvvvvv changes here will affect other functions vvvvvvvv!!!!!!!!!!!
+
         meta_dictionary = {'name': sample_name, 'duration': event_duration, 'total precipitation': precip_sum, 'max intensity': max_intensity, 'interval': intervall, 'event type': type, 'lag': l, 'delay': d, 'prediction steps': n}
-    	# !!!!!^^^^^^^^ changes here will affect other functions ^^^^^^^^^^!!!!!!!!!!!
      
         # append event dictionary to list
         sequenced_list.append([])
