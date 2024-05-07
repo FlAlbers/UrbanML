@@ -46,11 +46,16 @@ Data:
 '''
 
 def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, 
-              lag = None, delay = None, p_steps = None, in_vars = None, out_vars = None, 
-              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20):
+              lag = None, delay = None, p_steps = None, in_vars_future = None, in_vars_past = None, out_vars = None, 
+              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20, sel_epochs = 60):
 
     total_start_time = time.time()
-    out_vars = [col for col in sims_data[0][1].columns if col not in in_vars]
+
+    
+    out_vars = [col for col in sims_data[0][1].columns if col not in in_vars_future]
+
+    if in_vars_past is not None:
+        in_vars = in_vars_future + in_vars_past
     
     train_val_data, test_data = train_test_split(sims_data, test_size=test_size, random_state=seed_train_val_test)
         
@@ -76,7 +81,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             
             ############### Fitting scalers for Normalization of data
             # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
-            in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_data], axis=0))
+            in_concat = np.array(pd.concat([sample[1][in_vars] for sample in train_data], axis=0))
             out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_data], axis=0))
 
             # Fitting the scalers for in and out data
@@ -87,14 +92,14 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
 
 
             ################# Make sequences out of the data
-            x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                                out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+            x_train, y_train = sequence_data(train_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
+                                                out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
             print(x_train.shape)
             print(y_train[0].shape)
             print(y_train[1].shape)
 
-            x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                            out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+            x_val, y_val = sequence_data(val_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
+                                            out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
 
             # Train the model
             model = set_model()
@@ -121,7 +126,8 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
                 'prediction_steps': p_steps,
                 'seed_train_val_test': seed_train_val_test,
                 'seed_train_val': seed_train_val,
-                'in_vars': in_vars,
+                'in_vars': in_vars_future,
+                'in_vars_past': in_vars_past,
                 'out_vars': out_vars,
                 'history': lstm.history,
                 'train_time': train_time
@@ -158,7 +164,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
     # Resume Training with the best model
     ############### Fitting scalers for Normalization of data
     # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
-    in_concat = np.array(pd.concat([sample[1][['duration','p']] for sample in train_val_data], axis=0))
+    in_concat = np.array(pd.concat([sample[1][in_vars] for sample in train_val_data], axis=0))
     out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
 
     # Fitting the scalers for in and out data
@@ -169,11 +175,11 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
 
 
     ################# Make sequences out of the data
-    x_dev, y_dev = sequence_data(train_val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                        out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    x_dev, y_dev = sequence_data(train_val_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
+                                        out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
 
-    x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                        out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    x_test, y_test = sequence_data(test_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
+                                        out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
 
     if cv_splits < 2:
         selected_model = set_model()
@@ -183,7 +189,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
         selected_model.set_weights(model_dict[f'model_{select_id}']['model'].get_weights())
 
     start_train = time.time()
-    lstm = selected_model.fit(x_dev, y_dev,epochs=60,batch_size=10,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
+    lstm = selected_model.fit(x_dev, y_dev,epochs=sel_epochs,batch_size=10,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
     end_train = time.time()
     total_end_time = time.time()
     train_time = end_train - start_train + model_dict[f'model_{select_id}']['train_time']
@@ -201,7 +207,8 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             'prediction_steps': p_steps,
             'seed_train_val_test': seed_train_val_test,
             'seed_train_val': seed_train_val,
-            'in_vars': in_vars,
+            'in_vars': in_vars_future,
+            'in_vars_past': in_vars_past,
             'out_vars': out_vars,
             'history': lstm.history,
             'train_time': train_time,
@@ -261,7 +268,7 @@ if __name__ == '__main__':
     # Train the model
     model_container = fit_model(model_name = model_name, save_folder= save_folder, sims_data= sims_data, 
                             model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
-                            delay = delay, p_steps = p_steps, in_vars = in_vars, out_vars = None , 
+                            delay = delay, p_steps = p_steps, in_vars_future = in_vars, out_vars = None , 
                             seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, shuffle=shuffle, epochs=epochs)
     
     model_container['selected_model']['total_train_time']

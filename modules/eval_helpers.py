@@ -37,7 +37,7 @@ def rmse_from_raw(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag
     if isinstance(raw_data,list):
         rmse_all = ()
         for data in raw_data:
-            x, y = sequence_data(data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+            x, y = sequence_data(data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
             pred = model.predict(x, verbose=1)
@@ -49,7 +49,7 @@ def rmse_from_raw(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag
             rmse = math.sqrt(mse)
             rmse_all = np.append(rmse_all, rmse)
     else:    
-        x, y = sequence_data(raw_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+        x, y = sequence_data(raw_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
         pred = model.predict(x, verbose=1)
@@ -88,7 +88,7 @@ def mae_from_raw(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag,
     if isinstance(raw_data,list):
         mae_all = ()
         for data in raw_data:
-            x, y = sequence_data(data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+            x, y = sequence_data(data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
             pred = model.predict(x, verbose=1)
@@ -99,7 +99,7 @@ def mae_from_raw(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag,
             mae = np.subtract(true_inverse,pred_inverse).mean()
             mae_all = np.append(mae_all, mae)
     else:    
-        x, y = sequence_data(raw_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+        x, y = sequence_data(raw_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
         pred = model.predict(x, verbose=1)

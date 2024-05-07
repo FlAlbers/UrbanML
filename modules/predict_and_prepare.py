@@ -28,7 +28,7 @@ def pred_all_list(model, out_scaler, event_list, event_list_trans):
     return new_list
 
 
-def pred_inverse_all(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag, delay, p_steps):
+def pred_inverse_all(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, lag, delay, p_steps, in_vars_past=None):
     """
     Perform predictions using a given model and scaler on a list of sequences sorted by event.
 
@@ -49,8 +49,8 @@ def pred_inverse_all(raw_data, model, in_vars, out_vars, in_scaler, out_scaler, 
     """
     
     # Sequenzieren und normalisieren der Daten
-    x, y = sequence_data(raw_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
-                                            out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    x, y = sequence_data(raw_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+                        out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
 
 
     pred = model.predict(x, verbose=0)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     in_scaler = model_container['selected_model']['in_scaler']
     out_scaler = model_container['selected_model']['out_scaler']
 
-    seq_test, seq_test_trans = sequence_list(test_data, in_vars=in_col, in_scaler= in_scaler ,out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    seq_test, seq_test_trans = sequence_list(test_data, in_vars_future=in_col, in_scaler= in_scaler ,out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
     
     test_list = pred_and_add_durIndex(model, out_scaler, seq_test, seq_test_trans)
     

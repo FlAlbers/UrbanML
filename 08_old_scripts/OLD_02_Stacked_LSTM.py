@@ -71,7 +71,7 @@ lag = int(2 * 60 / 5)
 delay = 0
 p_steps = 6
 
-x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_train, y_train = sequence_data(train_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_train.shape)
 print(y_train[0].shape)
@@ -86,7 +86,7 @@ https://www.linkedin.com/pulse/improving-lstm-performance-using-time-series-cros
 
 '''
 
-x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_val, y_val = sequence_data(val_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(x_val.shape)
 print(y_val[0].shape)
@@ -159,11 +159,11 @@ model, in_scaler, out_scaler, train_data, val_data, test_data = load_model(model
 # Test the model
 
 # sequence data to list structure
-seq_test = sequence_list(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+seq_test = sequence_list(test_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 print(seq_test[0])
 
-x_test, y_test = sequence_data(test_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+x_test, y_test = sequence_data(test_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                   out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, random_seed=random_seed)
 print(x_test.shape)
 print(y_test.shape)

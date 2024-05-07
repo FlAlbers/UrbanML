@@ -118,13 +118,13 @@ for train, val in cv.split(train_val_data):
 
 
     ################# Make sequences out of the data
-    x_train, y_train = sequence_data(train_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+    x_train, y_train = sequence_data(train_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                         out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
     print(x_train.shape)
     print(y_train[0].shape)
     print(y_train[1].shape)
 
-    x_val, y_val = sequence_data(val_data, in_vars=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
+    x_val, y_val = sequence_data(val_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
                                     out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
 
 

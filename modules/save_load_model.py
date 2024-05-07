@@ -11,8 +11,10 @@ from keras.models import Model, model_from_json
 import joblib
 import os
 import pickle
+import pickletools
 import csv
 import pandas as pd
+import gzip
 import matplotlib.pyplot as plt
 
 def save_model(model_name = None, model =None, save_folder = None, in_scaler = None, out_scaler = None, train_data=None, val_data = None, test_data=None, lag =None, delay=None, prediction_steps=None, seed_train_val_test = None, seed_train_val=None, in_vars=None, out_vars=None, cv_scores=None, cv_models=None, history = None):
@@ -265,9 +267,21 @@ def load_model_container(save_folder, print_info = True):
         print_info (bool): If True, prints "Loaded model from disk".
 
     """
-    container_path = os.path.join(save_folder, 'model_dict.pkl')
-    if os.path.exists(container_path):
-        with open(container_path, 'rb') as file:
+
+
+    container_path_pkl = os.path.join(save_folder, 'model_dict.pkl')
+    # container_path = os.path.join(save_folder, 'model_dict.pkl.gz')
+    # if os.path.exists(container_path):
+    #     with gzip.open(container_path, 'rb') as file:
+    #         model_container = pickle.load(file)
+    # elif os.path.exists(container_path_pkl):
+    #     with open(container_path_pkl, 'rb') as file:
+    #         model_container = pickle.load(file)
+    # else:
+    #     model_container = None
+    
+    if os.path.exists(container_path_pkl):
+        with open(container_path_pkl, 'rb') as file:
             model_container = pickle.load(file)
     else:
         model_container = None
@@ -323,7 +337,7 @@ def save_model_container(model_container, save_folder = None):
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
 
-    container_path = os.path.join(save_folder, 'model_dict.pkl')
+    
     i = 0
     for key in model_container.keys():
         if key.startswith('model'):
@@ -331,6 +345,7 @@ def save_model_container(model_container, save_folder = None):
             weights_save_name = 'model_' + str(i) + '.weights.h5'
             model_path = os.path.join(save_folder, model_save_name)
             weights_path = os.path.join(save_folder, weights_save_name)
+
             model_json = model_container[key]['model'].to_json()
             with open(model_path, "w") as json_file:
                 json_file.write(model_json)
@@ -358,6 +373,7 @@ def save_model_container(model_container, save_folder = None):
             selected_model = model_container[key]['model']
             del model_container[key]['model']
 
+    container_path = os.path.join(save_folder, 'model_dict.pkl')
     # Save the model container without the models
     with open(container_path, 'wb') as file:
         pickle.dump(model_container, file)
@@ -386,16 +402,28 @@ def save_model_container(model_container, save_folder = None):
 # Test Area for functions
 if __name__ == '__main__':
 
-    model_name = 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
-    model_folder = os.path.join('05_models', model_name)
+    model_name = 'Gievenbeck_Test_past'
+    model_folder = os.path.join('05_models', 'add_past_compare', model_name)
     # model, in_scaler, out_scaler, test_data = load_model(model_folder)
 
     model_container = load_model_container(model_folder)
     
     save_model_container(model_container, model_folder)
-    model_container['model_4'] = model_container.pop('model5')
+    model_container['selected_model']['in_vars_past'] = ['R0019769']
+    print(model_container['selected_model']['name'])
+    # model_container['model_4'] = model_container.pop('model5')
     # model_container = load_model_containerOLD(model_folder)
     # save_model_container(model_container, save_folder = model_folder)
     # save_folder = model_folder
 # model_container['model_2'].keys()
     # model.summary()
+
+    model_name = 'Gievenbeck_LSTM_Single_MSE_u256_2024-05-03'
+    model_folder = os.path.join('05_models', 'units_compare', model_name)
+
+    container_path = os.path.join(model_folder, 'model_dict.pkl')
+    container_path_gz = os.path.join(model_folder, 'model_dict.pkl.gz')
+    
+    with open(container_path, 'rb') as orig_file:
+        with gzip.open(container_path_gz, 'wb') as zipped_file:
+            zipped_file.writelines(orig_file)

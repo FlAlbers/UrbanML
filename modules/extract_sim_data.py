@@ -95,19 +95,22 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
     for file_name in os.listdir(folder_path):
         if file_name.endswith('.out'):
             with Output(os.path.join(folder_path, file_name)) as out:
+                # get precipitation data
                 precip = SystemSeries(out).rainfall
                 current_sim = pd.DataFrame({'p': precip.values()}, index=precip.keys())
+                # get outfall flow data for each node
                 for node in nodes:
                     outfall_flow = NodeSeries(out)[node].total_inflow
                     current_sim[node] = outfall_flow.values()
                 
+                # resample data
                 current_sim = current_sim.resample(resample, origin = 'end').mean()
                 start_event = current_sim[current_sim['p'] > 0].index[0]
                 current_sim['duration'] = (current_sim.index - start_event).total_seconds() / 60
                 current_sim = current_sim[['duration'] + list(current_sim.columns[:-1])]
                 sims_data.append((file_name, current_sim))
 
-    # 1 % Schwelle in der Nachlaufzeit
+    # 1 % Threshold  after end of precipitation event
     if threshold_multiplier > 0:
         max_values = pd.DataFrame(columns=nodes)
         for sim in sims_data:
@@ -115,17 +118,20 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
             max_val = max_val.reshape(1, -1)
             max_values = pd.concat([max_values,pd.DataFrame(max_val, columns=nodes)], axis=0)
 
-        
+        # set threshold
         thresholds = max_values.max() * threshold_multiplier
 
         last_p_durs = pd.DataFrame(columns=['duration'])
 
+        # set flow values below threshold to 0 and remove data after last relevant data point
         for sim in sims_data:
             for node in nodes:
                 sim[1][node][sim[1][node] < thresholds[node]] = 0
+            # get last relevant time step
             last_p = pd.DataFrame([sim[1][sim[1]['p'] > 0]['duration'].iloc[-1]], columns=['duration'])
             last_p_durs = pd.concat([last_p_durs, last_p])
 
+        # remove data after last relevant time step
         for i, (sim_id, sim_df) in enumerate(sims_data):
             first_p = pd.DataFrame([sim[1][sim[1]['p'] > 0]['duration'].iloc[0]], columns=['duration'])
             
