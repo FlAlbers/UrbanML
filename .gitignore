@@ -1,5 +1,2 @@
-03_sim_data/inp/
-03_sim_data/inp_1d_max/
-03_sim_data/sim_test/
-03_sim_data/quick_sim/
+03_sim_data/*/
 .Rproj.user
