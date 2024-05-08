@@ -262,7 +262,7 @@ if __name__ == '__main__':
         p_steps = 12
         min_duration = p_steps * interval
         nodes = ['R0019769', 'W1']
-        in_vars_future=['duration', 'p']
+        in_vars_future=['duration', 'p', 'ap']
         # in_vars_past = [node]
         in_vars = None
         seed_train_val_test = 8
@@ -275,7 +275,7 @@ if __name__ == '__main__':
         units = 128
         model_folder = os.path.join('05_models', model_name)
         folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
-        sims_data = multi_node(folder_path_sim, nodes,resample = '5min', threshold_multiplier=0, min_duration=min_duration) # ['R0019769','R0019717']
+        sims_data = multi_node(folder_path_sim, nodes,resample = '5min', threshold_multiplier=0, min_duration=min_duration, accum_precip=True) # ['R0019769','R0019717']
 
         # Splitting data into train and test sets
         test_size=0.1

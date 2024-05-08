@@ -57,7 +57,7 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
 
     return sims_data
 
-def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0, min_duration = 60):
+def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0, min_duration = 60, accum_precip = False):
     '''
     Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
 
@@ -105,6 +105,9 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
                 
                 # resample data
                 current_sim = current_sim.resample(resample, origin = 'end').mean()
+                if accum_precip:
+                    current_sim['ap'] = current_sim['p'].cumsum()
+
                 start_event = current_sim[current_sim['p'] > 0].index[0]
                 current_sim['duration'] = (current_sim.index - start_event).total_seconds() / 60
                 current_sim = current_sim[['duration'] + list(current_sim.columns[:-1])]
