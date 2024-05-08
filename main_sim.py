@@ -36,6 +36,7 @@ import os
 import pandas as pd
 import multiprocessing
 from modules.generate_inps import generate_inps
+from modules.swmm_ex import swmm_ex_multiprocessing as ex
 
 # get current path of working directory
 current_path = os.getcwd()
@@ -75,3 +76,8 @@ inp_dict['cpu_cores'] = multiprocessing.cpu_count()
 inp_dict['report_subcatchments'] = False
 
 generate_inps(inp_dict)
+
+
+sim_path = os.path.join('03_sim_data', 'inp_RR')
+
+ex.swmm_mp(sim_path)

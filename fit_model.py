@@ -56,7 +56,9 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
 
     if in_vars_past is not None:
         in_vars = in_vars_future + in_vars_past
-    
+    else:
+        in_vars = in_vars_future
+
     train_val_data, test_data = train_test_split(sims_data, test_size=test_size, random_state=seed_train_val_test)
         
     def set_model():
@@ -82,13 +84,26 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             ############### Fitting scalers for Normalization of data
             # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
             in_concat = np.array(pd.concat([sample[1][in_vars] for sample in train_data], axis=0))
-            out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_data], axis=0))
-
-            # Fitting the scalers for in and out data
             in_scaler = MinMaxScaler(feature_range=(0, 1))
-            out_scaler = MinMaxScaler(feature_range=(0, 1))
+            # Fitting the scaler for in data
             in_scaler = in_scaler.fit(in_concat)
-            out_scaler = out_scaler.fit(out_concat)
+
+            # Concat and fit the out data (only for scalers NOT for further processing)
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            if len(out_vars) > 1:
+                out_scaler = []
+                out_concat = np.array([])
+                for var in out_vars:
+                    out_var_concat  = np.array(pd.concat([sample[1][var] for sample in train_data], axis=0))
+                    out_var_concat = out_var_concat.reshape(-1, 1)
+                    # if out_concat.size == 0:
+                    #     out_concat = out_var_concat
+                    # else:
+                    #     out_concat = np.append(out_concat, out_var_concat, axis=1)
+                    out_scaler.append(scaler.fit(out_var_concat))
+            else:
+                out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_data], axis=0))
+                out_scaler = scaler.fit(out_concat)
 
 
             ################# Make sequences out of the data
@@ -106,7 +121,9 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             # model = shuffle_weights(model)
             
             start_train = time.time()
+
             lstm = model.fit(x_train, y_train,epochs=epochs,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
+            
             end_train = time.time()
             train_time = end_train - start_train
 
@@ -165,13 +182,28 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
     ############### Fitting scalers for Normalization of data
     # Concatenate all data from all list objects in sims_data JUST for fitting the scalers and not for further processing
     in_concat = np.array(pd.concat([sample[1][in_vars] for sample in train_val_data], axis=0))
-    out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
-
-    # Fitting the scalers for in and out data
     in_scaler = MinMaxScaler(feature_range=(0, 1))
-    out_scaler = MinMaxScaler(feature_range=(0, 1))
+    # Fitting the scaler for in data
     in_scaler = in_scaler.fit(in_concat)
-    out_scaler = out_scaler.fit(out_concat)
+
+    # Concat and fit the out data (only for scalers NOT for further processing)
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    in_concat = np.array(pd.concat([sample[1][in_vars] for sample in train_val_data], axis=0))
+    if len(out_vars) > 1:
+        out_scaler = []
+        out_concat = np.array([])
+        for var in out_vars:
+            out_var_concat  = np.array(pd.concat([sample[1][var] for sample in train_val_data], axis=0))
+            out_var_concat = out_var_concat.reshape(-1, 1)
+            # if out_concat.size == 0:
+            #     out_concat = out_var_concat
+            # else:
+            #     out_concat = np.append(out_concat, out_var_concat, axis=1)
+            out_scaler.append(scaler.fit(out_var_concat))
+    else:
+        out_concat  = np.array(pd.concat([sample[1][out_vars] for sample in train_val_data], axis=0))
+        out_scaler = scaler.fit(out_concat)
+
 
 
     ################# Make sequences out of the data
@@ -217,12 +249,63 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
 
     model_dict['selected_model'] = model_container
     return model_dict
-# Load the model, the scalers and the test data
-# model, in_scaler, out_scaler, train_data, val_data, test_data, data_info_dict = load_model(save_folder)
-    # model_container = load_model_container(save_folder)
 
 
 if __name__ == '__main__':
+    
+    
+    def test_RR_wehr():
+        model_name = 'Gievenbeck_RR_wehr_20240507'
+        interval = 5
+        lag = int(2 * 60 / interval)
+        delay = -12
+        p_steps = 12
+        min_duration = p_steps * interval
+        nodes = ['R0019769', 'W1']
+        in_vars_future=['duration', 'p']
+        # in_vars_past = [node]
+        in_vars = None
+        seed_train_val_test = 8
+        seed_train_val = 50
+        # cv_splits = 5
+        cv_splits = 5
+        loss = 'mse'
+        epochs = 10
+        sel_epochs = 10
+        units = 128
+        model_folder = os.path.join('05_models', model_name)
+        folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
+        sims_data = multi_node(folder_path_sim, nodes,resample = '5min', threshold_multiplier=0, min_duration=min_duration) # ['R0019769','R0019717']
+
+        # Splitting data into train and test sets
+        test_size=0.1
+
+        model = Model()
+
+        # Define model layers.
+        input_layer = Input(shape=(lag, len(in_vars_future))) # input shape: (sequence length, number of features)
+        lstm_1 = LSTM(units=32, activation='relu', return_sequences=True)(input_layer) #units = number of hidden layers
+        lstm_y1 = LSTM(units=64, activation='relu')(lstm_1) #units = number of hidden layers
+        lstm_y2 = LSTM(units=64, activation='relu')(lstm_1)
+        y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_y1)
+
+        y2_output = Dense(units=p_steps, activation='relu',name='Q2')(lstm_y2)
+        # # For Second output
+        model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+        # model = Model(inputs=input_layer, outputs=y1_output)
+
+
+        model_container = fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, 
+                                    model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
+                                    delay = delay, p_steps = p_steps, in_vars_future = in_vars_future, out_vars = None , 
+                                    seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, epochs=epochs, loss=loss, sel_epochs = sel_epochs)
+        # Save the model container
+        save_model_container(model_container, model_folder)
+    test_RR_wehr()
+    
+    
+    
+    
     model_name = 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
     save_folder = os.path.join('05_models', model_name)
     folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')

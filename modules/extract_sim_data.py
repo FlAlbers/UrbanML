@@ -57,7 +57,7 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
 
     return sims_data
 
-def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0.01, min_duration = 60):
+def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0, min_duration = 60):
     '''
     Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
 

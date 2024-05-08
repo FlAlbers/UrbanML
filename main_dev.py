@@ -224,7 +224,100 @@ def deep_compare():
         save_model_container(model_container, model_folder)
 deep_compare()
 
+def test_RR():
+    model_name = 'Gievenbeck_RR_20240507'
+    interval = 5
+    lag = int(2 * 60 / interval)
+    delay = -12
+    p_steps = 12
+    min_duration = p_steps * interval
+    node = 'R0019769'
+    in_vars_future=['duration', 'p']
+    # in_vars_past = [node]
+    in_vars = None
+    seed_train_val_test = 8
+    seed_train_val = 50
+    # cv_splits = 5
+    cv_splits = 5
+    loss = 'mse'
+    epochs = 10
+    sel_epochs = 10
+    units = 128
+    model_folder = os.path.join('05_models', model_name)
+    folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
+    sims_data = multi_node(folder_path_sim, node,resample = '5min', threshold_multiplier=0, min_duration=min_duration) # ['R0019769','R0019717']
 
+    # Splitting data into train and test sets
+    test_size=0.1
+
+    model = Model()
+
+    # Define model layers.
+    input_layer = Input(shape=(lag, len(in_vars_future))) # input shape: (sequence length, number of features)
+    lstm_1 = LSTM(units=units, activation='relu')(input_layer) #units = number of hidden layers
+    y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
+
+    # # For Second output
+    # model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+    model = Model(inputs=input_layer, outputs=y1_output)
+
+
+    model_container = fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, 
+                                model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
+                                delay = delay, p_steps = p_steps, in_vars_future = in_vars_future, out_vars = None , 
+                                seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, epochs=epochs, loss=loss, sel_epochs = sel_epochs)
+    # Save the model container
+    save_model_container(model_container, model_folder)
+test_RR()
+
+def test_RR_wehr():
+    model_name = 'Gievenbeck_RR_wehr_20240507'
+    interval = 5
+    lag = int(2 * 60 / interval)
+    delay = -12
+    p_steps = 12
+    min_duration = p_steps * interval
+    nodes = ['R0019769', 'W1']
+    in_vars_future=['duration', 'p']
+    # in_vars_past = [node]
+    in_vars = None
+    seed_train_val_test = 8
+    seed_train_val = 50
+    # cv_splits = 5
+    cv_splits = 5
+    loss = 'mse'
+    epochs = 10
+    sel_epochs = 10
+    units = 128
+    model_folder = os.path.join('05_models', model_name)
+    folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
+    sims_data = multi_node(folder_path_sim, nodes,resample = '5min', threshold_multiplier=0, min_duration=min_duration) # ['R0019769','R0019717']
+
+    # Splitting data into train and test sets
+    test_size=0.1
+
+    model = Model()
+
+    # Define model layers.
+    input_layer = Input(shape=(lag, len(in_vars_future))) # input shape: (sequence length, number of features)
+    lstm_1 = LSTM(units=32, activation='relu', return_sequences=True)(input_layer) #units = number of hidden layers
+    lstm_y1 = LSTM(units=64, activation='relu')(lstm_1) #units = number of hidden layers
+    lstm_y2 = LSTM(units=64, activation='relu')(lstm_1)
+    y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_y1)
+
+    y2_output = Dense(units=p_steps, activation='relu',name='Q2')(lstm_y2)
+    # # For Second output
+    model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
+    # model = Model(inputs=input_layer, outputs=y1_output)
+
+
+    model_container = fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, 
+                                model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
+                                delay = delay, p_steps = p_steps, in_vars_future = in_vars_future, out_vars = None , 
+                                seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, epochs=epochs, loss=loss, sel_epochs = sel_epochs)
+    # Save the model container
+    save_model_container(model_container, model_folder)
+test_RR_wehr()
 
 ######################################################################################################
 # Test

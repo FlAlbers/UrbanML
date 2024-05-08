@@ -58,10 +58,16 @@ model_alias = ['"1 Schicht"','"2 Schichten"','"3 Schichten"']
 base_folder = os.path.join('05_models', 'deep_compare')
 compare_models(model_names, model_alias, export_name, base_folder)
 
-# Compare Test
+# Compare Past
 export_name = 'Comp_add_past' + str(date.today()) + '.ipynb'
 model_names = ['Gievenbeck_Past_double_u128','Gievenbeck_LSTM_Single_MSE_u128_2024-05-03']
 model_alias = ['"Mit vorh. Q"','"Ohne vorh. Q"']
 base_folder = os.path.join('05_models', 'add_past_compare')
 compare_models(model_names, model_alias, export_name, base_folder)
 
+# Test RR
+export_name = 'Test_RR' + '_' + str(date.today()) + '.ipynb'
+model_names = ['Gievenbeck_RR_20240507']
+model_alias = ['"RR"']
+base_folder = os.path.join('05_models')
+compare_models(model_names, model_alias, export_name, base_folder)

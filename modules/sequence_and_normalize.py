@@ -39,6 +39,7 @@ def out_slicer(out_sample, lag, delay, prediction_steps):
     k = N - (lag + delay + prediction_steps)
     # make slicer to extract sequences from in and out data
     out_slice = np.array([range(i + lag + delay, i + lag + delay + prediction_steps) for i in range(k)])
+    
     # slice and append data
     out_sliced = out_sample[out_slice, :]
 
@@ -137,20 +138,25 @@ def sequence_data(sims_data, in_vars_future=['duration', 'p'], out_vars=None, in
         in_event_future = in_event[:,range(len(in_vars_future))]
         in_event_past = in_event[:,range(len(in_vars_future), len(in_vars))]
 
-        if out_scaler is not None:
-            out_event = out_scaler.transform(out_event)
-
         out_sliced = []
 
-        # slice and append oputput data
+        # transfomr, slice and append oputput data
+        # if more than one output variable, slice each variable separately and put into list
         if len(out_vars) > 1:
-            for target in range(len(out_vars)):
-                out_sliced.append(out_slicer(out_event[:,target], lag, delay, prediction_steps))
-                if in_data.size == 0:
-                    out_data[target] = out_sliced[target]
+            for i in range(len(out_vars)):
+                if out_scaler is not None:
+                    out_scaled = out_scaler[i].transform(out_event[:,i].reshape(-1, 1))
                 else:
-                    out_data[target] = np.append(out_data[target], out_sliced[target], axis=0)
+                    out_scaled = out_event[:,i].reshape(-1, 1)
+                out_sliced.append(out_slicer(out_scaled, lag, delay, prediction_steps))
+                if in_data.size == 0:
+                    out_data[i] = out_sliced[i]
+                else:
+                    out_data[i] = np.append(out_data[i], out_sliced[i], axis=0)
+        # if only one output variable, slice and append directly
         else:
+            if out_scaler is not None:
+                out_event = out_scaler.transform(out_event)
             out_sliced = out_slicer(out_event, lag, delay, prediction_steps)
             if in_data.size == 0:
                 out_data = out_sliced
@@ -279,13 +285,13 @@ if __name__ == "__main__":
     from modules.save_load_model import load_model, load_model_container
     import os
 
-    model_name = 'Gievenbeck_LSTM_Single_MSE_u128_2024-05-03'
+    model_name = 'Gievenbeck_RR_wehr_20240507'
 
-    model_folder = os.path.join('05_models', 'units_compare', model_name)
+    model_folder = os.path.join('05_models', model_name)
 
     model_container  = load_model_container(model_folder)
 
-    test_data = model_container['model_0']['test_data']
+    test_data = model_container['selected_model']['test_data']
     in_vars=['duration', 'p']
     out_vars = [col for col in test_data[0][1].columns if col not in in_vars]
     
@@ -304,7 +310,7 @@ if __name__ == "__main__":
 
     # print(y_testing.shape)
     # print(x_testing.shape)
-    x, y = sequence_data(test_data, in_vars_future=in_vars, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=['R0019769'])
+    x, y = sequence_data(test_data, in_vars_future=in_vars, lag=lag, delay=delay, prediction_steps=p_steps)
 
     print(y[50], x[50])
     seq_test, seq_test_trans = sequence_list(test_data, in_vars_future=in_vars, out_vars=out_vars, in_scaler=in_scaler, 
