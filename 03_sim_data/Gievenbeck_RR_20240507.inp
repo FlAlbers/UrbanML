@@ -2903,7 +2903,7 @@ W1               RECT_OPEN    1                1          0          0
 [CURVES]
 ;;Name           Type       X-Value    Y-Value   
 ;;-------------- ---------- ---------- ----------
-Drossel          Pump1      0          1         
+Drossel          Pump1      0          0.5       
 
 [TIMESERIES]
 ;;Name           Date       Time       Value     

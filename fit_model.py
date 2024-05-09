@@ -47,12 +47,12 @@ Data:
 
 def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, 
               lag = None, delay = None, p_steps = None, in_vars_future = None, in_vars_past = None, out_vars = None, 
-              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20, sel_epochs = 60):
+              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20, sel_epochs = 60, only_non_0 = False):
 
     total_start_time = time.time()
 
-    
-    out_vars = [col for col in sims_data[0][1].columns if col not in in_vars_future]
+    if out_vars is None:
+        out_vars = [col for col in sims_data[0][1].columns if col not in in_vars_future]
 
     if in_vars_past is not None:
         in_vars = in_vars_future + in_vars_past
@@ -109,12 +109,23 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             ################# Make sequences out of the data
             x_train, y_train = sequence_data(train_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
                                                 out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
+            
+            if only_non_0:
+                indices = [i for i in range(len(y_train)) if np.sum(y_train[i]) > 0]
+                x_train = np.array([x_train[i] for i in indices])
+                y_train = np.array([y_train[i] for i in indices])
+            
             print(x_train.shape)
             print(y_train[0].shape)
             print(y_train[1].shape)
 
             x_val, y_val = sequence_data(val_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
                                             out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
+            
+            if only_non_0:
+                indices = [i for i in range(len(y_val)) if np.sum(y_val[i]) > 0]
+                x_val = np.array([x_val[i] for i in indices])
+                y_val = np.array([y_val[i] for i in indices])
 
             # Train the model
             model = set_model()
@@ -209,9 +220,21 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
     ################# Make sequences out of the data
     x_dev, y_dev = sequence_data(train_val_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
                                         out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
+    
+    
+    if only_non_0:
+        indices = [i for i in range(len(y_dev)) if np.sum(y_dev[i]) > 0]
+        x_dev = np.array([x_dev[i] for i in indices])
+        y_dev = np.array([y_dev[i] for i in indices])
 
     x_test, y_test = sequence_data(test_data, in_vars_future=in_vars_future, out_vars=out_vars, in_scaler=in_scaler, 
                                         out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps, in_vars_past=in_vars_past)
+    
+    if only_non_0:
+        indices = [i for i in range(len(y_test)) if np.sum(y_test[i]) > 0]
+        x_test = np.array([x_test[i] for i in indices])
+        y_test = np.array([y_test[i] for i in indices])
+
 
     if cv_splits < 2:
         selected_model = set_model()
@@ -277,6 +300,7 @@ if __name__ == '__main__':
         folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
         sims_data = multi_node(folder_path_sim, nodes,resample = '5min', threshold_multiplier=0, min_duration=min_duration, accum_precip=True) # ['R0019769','R0019717']
 
+        # sims_data[0][1]
         # Splitting data into train and test sets
         test_size=0.1
 

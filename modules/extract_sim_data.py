@@ -57,7 +57,7 @@ def single_node(folder_path, node = 'R0019769', resample = '1min'):
 
     return sims_data
 
-def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0, min_duration = 60, accum_precip = False):
+def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplier = 0, min_duration = 60, accum_precip = False, storage = None):
     '''
     Extract flow data of one or multiple nodes from .out files and resample the data to a given time interval.
 
@@ -88,6 +88,8 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
             nodes = [node.nodeid for node in Nodes(sim)]
 
     nodes = [nodes] if not isinstance(nodes, list) else nodes
+    if storage is not None:
+        storage = [storage] if not isinstance(storage, list) else storage
 
     sims_data = []
     wd = os.getcwd()
@@ -103,6 +105,12 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
                     outfall_flow = NodeSeries(out)[node].total_inflow
                     current_sim[node] = outfall_flow.values()
                 
+                if storage is not None:
+                    for stor in storage:
+                        stor_height = NodeSeries(out)[stor].invert_depth
+                        current_sim[stor] = stor_height.values()
+
+
                 # resample data
                 current_sim = current_sim.resample(resample, origin = 'end').mean()
                 if accum_precip:
@@ -148,11 +156,14 @@ def multi_node(folder_path, nodes = None, resample = '5min', threshold_multiplie
 if __name__ == '__main__':
 
     threshold = 0.01
-    folder_path = os.path.join('03_sim_data', 'sim_test')
-    nodes = ['R0019769', 'R0019768']
-    sims_data = multi_node(folder_path, nodes = nodes,resample = '5min')
+    folder_path = os.path.join('03_sim_data', 'inp_RR')
+    nodes = ['R0019769', 'W1']
+    storage = ['RR1']
+    sims_data = multi_node(folder_path, nodes = nodes,resample = '5min', min_duration = 60, storage = storage)
     # sims_data = single_node(folder_path, 'R0019769',resample = '5min')
-    # sims_data
+    for i in range(len(sims_data)):
+        print(sims_data[i][1]['RR1'].max())
+    # sims_data[0][1]['RR1'].sum()
 
     
 

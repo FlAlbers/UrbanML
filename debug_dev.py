@@ -12,49 +12,52 @@ from modules.save_load_model import save_model_container, load_model_container
 from datetime import date
 
 
-def test_RR():
-    model_name = 'Gievenbeck_RR_20240507'
+def units_compare():
+    # Model 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
+    # loss_functions = ['mse', 'mae', 'mape']
+    model_names = ['Gievenbeck_LSTM_Single_MSE_u128' + '_' +str(date.today())]
+    model_folders = []
+    for m_name in model_names:
+        model_folders.append(os.path.join('05_models/test_wehr', m_name))
+
+    folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
+
     interval = 5
     lag = int(2 * 60 / interval)
     delay = -12
     p_steps = 12
     min_duration = p_steps * interval
-    node = 'R0019769'
-    in_vars_future=['duration', 'p']
-    # in_vars_past = [node]
-    in_vars = None
+    in_vars=['duration', 'p', 'ap']
+    out_vars = ['W1']
+    storage = ['RR1']
     seed_train_val_test = 8
     seed_train_val = 50
-    # cv_splits = 5
     cv_splits = 5
+    shuffle = True
+    epochs = 20
     loss = 'mse'
-    epochs = 10
-    sel_epochs = 10
-    units = 128
-    model_folder = os.path.join('05_models', model_name)
-    folder_path_sim = os.path.join('03_sim_data', 'inp_RR')
-    sims_data = multi_node(folder_path_sim, node,resample = '5min', threshold_multiplier=0, min_duration=min_duration) # ['R0019769','R0019717']
+    units = [128]
+    sims_data = multi_node(folder_path_sim, ['W1'],resample = '5min', min_duration=min_duration, accum_precip=True, storage=storage) # ['R0019769','R0019717']
 
     # Splitting data into train and test sets
     test_size=0.1
 
-    model = Model()
+    for model_name, model_folder, units_val in zip(model_names, model_folders, units):
+    ####### Define Model
+        model = Model()
 
-    # Define model layers.
-    input_layer = Input(shape=(lag, len(in_vars_future))) # input shape: (sequence length, number of features)
-    lstm_1 = LSTM(units=units, activation='relu')(input_layer) #units = number of hidden layers
-    y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
+        # Define model layers.
+        input_layer = Input(shape=(lag, len(in_vars))) # input shape: (sequence length, number of features)
+        lstm_1 = LSTM(units=units_val, activation='relu')(input_layer) #units = number of hidden layers
+        y1_output = Dense(units=p_steps, activation='relu', name='Q1')(lstm_1)
 
-    # # For Second output
-    # model = Model(inputs=input_layer, outputs=[y1_output, y2_output])
-    model = Model(inputs=input_layer, outputs=y1_output)
+        # Define the model with the input layer and a list of output layers
+        model = Model(inputs=input_layer, outputs=y1_output)
 
-
-    model_container = fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, 
-                                model_init = model, test_size = test_size, cv_splits = cv_splits, lag = lag, 
-                                delay = delay, p_steps = p_steps, in_vars_future = in_vars_future, out_vars = None , 
-                                seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, epochs=epochs, loss=loss, sel_epochs = sel_epochs)
-    # Save the model container
-    save_model_container(model_container, model_folder)
-
-test_RR()
+        # Train the model
+        model_container = fit_model(model_name = model_name, save_folder= model_folder, sims_data= sims_data, model_init = model, 
+                                    test_size = test_size, cv_splits = cv_splits, lag = lag, delay = delay, p_steps = p_steps, 
+                                    in_vars_future = in_vars, out_vars = out_vars , seed_train_val_test = seed_train_val_test, seed_train_val = seed_train_val, shuffle=shuffle, epochs=epochs, loss=loss)
+        # Save the model container
+        save_model_container(model_container, model_folder)
+units_compare()

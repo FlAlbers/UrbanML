@@ -139,10 +139,12 @@ def pred_and_add_durIndex(model, out_scaler = None, event_list = None, event_lis
             end_time = start_time + p_steps * interval
             duration_col = np.arange(start_time, end_time, interval).reshape(-1, 1)
             shape = (1, len(duration_col), 1 + len(true_inverse[n_seq][0]))
+            
+            shape_pred = (1, len(duration_col), 1 + len(true_inverse[n_seq][0]))
             # Add the duration column to the actual and predicted sequences and reshape to make them stackable
 
             true_seq_dur = np.append(duration_col, true_inverse[n_seq], axis=1).reshape(shape)
-            pred_seq_dur = np.append(duration_col, pred_inverse[n_seq], axis=1).reshape(shape)
+            pred_seq_dur = np.append(duration_col, pred_inverse[n_seq], axis=1).reshape(shape_pred)
             if n_seq == 0:
                 # actual_dur = np.column_stack((duration_col, actual_seq[n_seq])).reshape(shape)
                 
@@ -175,7 +177,7 @@ if __name__ == '__main__':
     from modules.sequence_and_normalize import sequence_list
   
     # Assign all relevant paths
-    model_folder = os.path.join('05_models', 'loss_functions_compare','Gievenbeck_LSTM_Single_MSE2024-04-28')
+    model_folder = os.path.join('05_models', 'comp_RR','Gievenbeck_RR_wehr_128_stor_2024-05-09')
     # model_folder = '05_models\\Gievenbeck_SingleNode_LSTM_20240328'
     # model_name = "Gievenbeck_LSTM_Single_MSE2024-04-28"
     # model_path = os.path.join(model_folder, f'{model_name}.json')
@@ -193,7 +195,8 @@ if __name__ == '__main__':
     delay = -12
     p_steps = 12
 
-    in_col=['duration', 'p']
+    in_col=['duration', 'p', 'ap']
+    in_vars_past=['RR1']
     # out_col=['Q_out']
 
 
@@ -202,9 +205,11 @@ if __name__ == '__main__':
     in_scaler = model_container['selected_model']['in_scaler']
     out_scaler = model_container['selected_model']['out_scaler']
 
-    seq_test, seq_test_trans = sequence_list(test_data, in_vars_future=in_col, in_scaler= in_scaler ,out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
+    seq_test, seq_test_trans = sequence_list(test_data, in_vars_future=in_col, in_vars_past=in_vars_past, in_scaler= in_scaler ,out_scaler=out_scaler, lag=lag, delay=delay, prediction_steps=p_steps)
     
     test_list = pred_and_add_durIndex(model, out_scaler, seq_test, seq_test_trans)
+    
+
     
     test_list2 = pred_all_list(model, out_scaler, seq_test, seq_test_trans)
     
