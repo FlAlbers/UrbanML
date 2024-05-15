@@ -47,7 +47,7 @@ Data:
 
 def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, cv_splits = 5, 
               lag = None, delay = None, p_steps = None, in_vars_future = None, in_vars_past = None, out_vars = None, 
-              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20, sel_epochs = 60, only_non_0 = False):
+              seed_train_val_test = None, seed_train_val = None, shuffle = True, loss = 'mse', epochs = 20, sel_epochs = 60, only_non_0 = False, batch = 32):
 
     total_start_time = time.time()
 
@@ -133,7 +133,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             
             start_train = time.time()
 
-            lstm = model.fit(x_train, y_train,epochs=epochs,batch_size=10,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
+            lstm = model.fit(x_train, y_train,epochs=epochs,batch_size=batch,validation_data=(x_val, y_val),verbose=2,shuffle=shuffle)
             
             end_train = time.time()
             train_time = end_train - start_train
@@ -244,7 +244,7 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
         selected_model.set_weights(model_dict[f'model_{select_id}']['model'].get_weights())
 
     start_train = time.time()
-    lstm = selected_model.fit(x_dev, y_dev,epochs=sel_epochs,batch_size=10,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
+    lstm = selected_model.fit(x_dev, y_dev,epochs=sel_epochs,batch_size=batch,validation_data=(x_test, y_test),verbose=2,shuffle=shuffle)
     end_train = time.time()
     total_end_time = time.time()
     train_time = end_train - start_train + model_dict[f'model_{select_id}']['train_time']
