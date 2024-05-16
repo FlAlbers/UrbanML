@@ -15,8 +15,11 @@ from datetime import date
 
 
 def loss_functions_compare():
-    loss_functions = ['mse', 'mae', 'mape']
-    model_names = ('Gievenbeck_LSTM_Single_MSE'+str(date.today()), 'Gievenbeck_LSTM_Single_MAE' +str(date.today()), 'Gievenbeck_LSTM_Single_MAPE' +str(date.today()))
+    loss_functions = ['mse', 'mae']
+    model_names = ['Gievenbeck_LSTM_Single_MSE'+str(date.today()), 'Gievenbeck_LSTM_Single_MAE' +str(date.today())]
+    
+    loss_functions = ['mae']
+    model_names = ['Gievenbeck_LSTM_Single_MAE' +str(date.today())]
     model_folders = []
     for m_name in model_names:
         model_folders.append(os.path.join('05_models/loss_functions_compare', m_name))
@@ -118,7 +121,7 @@ shuffle_compare()
 def units_compare():
     # Model 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
     # loss_functions = ['mse', 'mae', 'mape']
-    model_names = ['Gievenbeck_LSTM_Single_MSE_u32' + '_' +str(date.today()), 'Gievenbeck_LSTM_Single_MSE_u64' + '_' +str(date.today()),'Gievenbeck_LSTM_Single_MSE_u128' + '_' +str(date.today()),'Gievenbeck_LSTM_Single_MSE_u256' + '_' +str(date.today()),'Gievenbeck_LSTM_Single_MSE_u512' + '_' +str(date.today())]
+    model_names = ['Gievenbeck_LSTM_Single_MSE_u32' + '_' +str(date.today()), 'Gievenbeck_LSTM_Single_MSE_u64' + '_' +str(date.today()),'Gievenbeck_LSTM_Single_MSE_u128' + '_' +str(date.today()),'Gievenbeck_LSTM_Single_MSE_u256' + '_' +str(date.today())]
     model_folders = []
     for m_name in model_names:
         model_folders.append(os.path.join('05_models/units_compare', m_name))
@@ -137,7 +140,7 @@ def units_compare():
     shuffle = True
     epochs = 20
     loss = 'mse'
-    units = [32, 64, 128, 256, 512]
+    units = [32, 64, 128, 256]
     sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min', threshold_multiplier=0.01, min_duration=min_duration) # ['R0019769','R0019717']
 
     # Splitting data into train and test sets
@@ -168,7 +171,7 @@ units_compare()
 def deep_compare():
     # Model 'Gievenbeck_LSTM_Single_Shuffle_CV_1h_P_20240408'
     # loss_functions = ['mse', 'mae', 'mape']
-    model_names = ['Gievenbeck_LSTM_Double_MSE_u64' + '_' +str(date.today()), 'Gievenbeck_LSTM_Triple_MSE_u32' + '_' +str(date.today())]
+    model_names = ['Gievenbeck_LSTM_Double_MSE_u128' + '_' +str(date.today()), 'Gievenbeck_LSTM_Triple_MSE_u128' + '_' +str(date.today())]
     model_folders = []
     for m_name in model_names:
         model_folders.append(os.path.join('05_models/deep_compare', m_name))
@@ -187,7 +190,7 @@ def deep_compare():
     shuffle = True
     epochs = 20
     loss = 'mse'
-    units = [64,32]
+    units = [128,128]
     n_layers = [2, 3]
     sims_data = multi_node(folder_path_sim, 'R0019769',resample = '5min', threshold_multiplier=0.01, min_duration=min_duration) # ['R0019769','R0019717']
 
@@ -536,7 +539,7 @@ comp_RR_wehr_stor()
 ######################################################################################################
 # Test
 # Train the model
-model_name = 'Gievenbeck_Past_double_u128'
+model_name = 'Gievenbeck_Test'
 interval = 5
 lag = int(2 * 60 / interval)
 delay = -12
@@ -551,9 +554,9 @@ seed_train_val = 50
 # cv_splits = 5
 cv_splits = 5
 loss = 'mse'
-epochs = 20
-sel_epochs = 60
-units = 128
+epochs = 2
+sel_epochs = 4
+units = 32
 model_folder = os.path.join('05_models', model_name)
 folder_path_sim = os.path.join('03_sim_data', 'inp_1d_max')
 sims_data = multi_node(folder_path_sim, node,resample = '5min', threshold_multiplier=0.01, min_duration=min_duration) # ['R0019769','R0019717']

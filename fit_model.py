@@ -164,7 +164,12 @@ def fit_model(model_name, save_folder, sims_data, model_init, test_size = 0.1, c
             models.append(model_container)
             loss_last = lstm.history['loss'][-1]
             val_loss_last = lstm.history['val_loss'][-1]
-            new_row = pd.DataFrame({'loss': [loss_last], 'val_loss': [val_loss_last]})
+            mse_last = lstm.history['mse'][-1]
+            val_mse_last = lstm.history['val_mse'][-1]
+            mae_last = lstm.history['mae'][-1]
+            val_mae_last = lstm.history['val_mae'][-1]
+
+            new_row = pd.DataFrame({'loss': [loss_last], 'val_loss': [val_loss_last], 'mse': [mse_last], 'val_mse': [val_mse_last], 'mae': [mae_last], 'val_mae': [val_mae_last]})
             cv_scores = pd.concat([cv_scores, new_row], ignore_index=True)
 
             fold_nr += 1
