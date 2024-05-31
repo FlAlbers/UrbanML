@@ -45,7 +45,7 @@ inp_dict = {}
 ###########################################################################################################
 # Input section
 ## Input parameters for inp file generation
-inp_dict['base_inp_path'] = os.path.join('03_sim_data', 'Gievenbeck_RR_20240507.inp')
+inp_dict['base_inp_path'] = os.path.join('03_sim_data', 'Gievenbeck_RR_20240528.inp')
 # base_inp_path = '03_sim_data\\Gievenbeck_20240325.inp'
 # path to folder with rain event data
 inp_dict['event_data_path'] = os.path.join('02_input_data', 'events_FMO')
@@ -57,13 +57,13 @@ inp_dict['max_duration'] = 24*60 # 24 hours
 # Name of the study area
 inp_dict['name_place'] = 'Gievenbeck'
 # Path to save the inp files
-inp_dict['save_inp_path'] = os.path.join(current_path, '03_sim_data','inp_RR')
+inp_dict['save_inp_path'] = os.path.join(current_path, '03_sim_data','inp_RKB')
 # Euler type for Kostra data (2 is standard)
 inp_dict['euler_typ'] = 2
 # Start time of the simulation
 inp_dict['start_time'] = pd.to_datetime('2024-01-01 00:00')
 # Buffer time before and after the rainfall event
-inp_dict['buffer_time'] = pd.Timedelta('1h')
+inp_dict['buffer_time'] = pd.Timedelta('2h')
 # Name of the Kostra time series to be included in the inp file
 inp_dict['TSnameKostra'] = 'Kostra'
 # Name of the measured time series to be included in the inp file
@@ -78,6 +78,6 @@ inp_dict['report_subcatchments'] = False
 generate_inps(inp_dict)
 
 
-sim_path = os.path.join('03_sim_data', 'inp_RR')
+sim_path = os.path.join('03_sim_data', 'inp_RKB')
 
 ex.swmm_mp(sim_path)
