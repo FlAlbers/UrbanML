@@ -1,8 +1,0 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-
-# rcpp src files
-src/*.o
-src/*.dll

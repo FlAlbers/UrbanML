@@ -21,7 +21,6 @@ base_folder = os.path.join('05_models', 'test_RKB')
 title = 'Test RKB'
 compare_models(model_names, model_alias, export_name, base_folder, title = title)
 
-
 # Compare loss functions MSE, MAE, MAPE
 # export_name = 'Comp_Loss_functions_' + str(date.today()) + '.ipynb'
 # model_names = ['Gievenbeck_LSTM_Single_MSE2024-05-14', 'Gievenbeck_LSTM_Single_MAE2024-05-14', 'Gievenbeck_LSTM_Single_MAPE2024-05-14']

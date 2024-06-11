@@ -45,19 +45,19 @@ inp_dict = {}
 ###########################################################################################################
 # Input section
 ## Input parameters for inp file generation
+# path to where the the inp-files should be saved
+inp_dict['save_inp_path'] = os.path.join(current_path, '03_sim_data','inp_RKB')
+# path to base inp file that is used as template
 inp_dict['base_inp_path'] = os.path.join('03_sim_data', 'Gievenbeck_RR_20240528.inp')
 # base_inp_path = '03_sim_data\\Gievenbeck_20240325.inp'
 # path to folder with rain event data
 inp_dict['event_data_path'] = os.path.join('02_input_data', 'events_FMO')
-# event_data_path = '02_input_data\\events_FMO'
 # path to kostra data
 inp_dict['kostra_data_path'] = os.path.join(current_path, '02_input_data', 'kostra_118111.csv')
 # set maximum duration time [min] for Kostra data
 inp_dict['max_duration'] = 24*60 # 24 hours
 # Name of the study area
 inp_dict['name_place'] = 'Gievenbeck'
-# Path to save the inp files
-inp_dict['save_inp_path'] = os.path.join(current_path, '03_sim_data','inp_RKB')
 # Euler type for Kostra data (2 is standard)
 inp_dict['euler_typ'] = 2
 # Start time of the simulation
@@ -75,9 +75,7 @@ inp_dict['cpu_cores'] = multiprocessing.cpu_count()
 # slect if subcatchment values should be reported TRUE or FALSE
 inp_dict['report_subcatchments'] = False
 
+# generate inp files based on the input parameters
 generate_inps(inp_dict)
-
-
-sim_path = os.path.join('03_sim_data', 'inp_RKB')
-
-ex.swmm_mp(sim_path)
+# run the simulations
+ex.swmm_mp(inp_dict['save_inp_path'])
