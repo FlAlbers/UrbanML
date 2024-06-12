@@ -226,9 +226,8 @@ export_name = 'Eval_Test' + '_' + str(date.today()) + '.ipynb'
 model_names = [model_name]
 model_alias = ['"Test Model"']
 title = 'Test evaluation'
-model_folder = os.path.join('05_models','train_test')
 
-
+model_folder = model_folder
 ######## End of Input section 
 
 # Evaluation  function. Do not change anything here!!!!!
