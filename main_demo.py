@@ -53,11 +53,11 @@ inp_dict = {}
 # Input section
 ## Input parameters for inp file generation
 # path to where the the inp-files should be saved
-inp_dict['save_inp_path'] = os.path.join(current_path, '03_sim_data','inp_test')
+inp_dict['save_inp_path'] = os.path.join(current_path, '03_sim_data','inp_demo')
 # path to base inp file that is used as template
-inp_dict['base_inp_path'] = os.path.join('03_sim_data', 'Gievenbeck_20240325.inp')
+inp_dict['base_inp_path'] = os.path.join('03_sim_data', 'Demo.inp')
 # Name of the study area
-inp_dict['name_place'] = 'Gievenbeck'
+inp_dict['name_place'] = 'Demo'
 # base_inp_path = '03_sim_data\\Gievenbeck_20240325.inp'
 # path to folder with rain event data
 inp_dict['event_data_path'] = os.path.join('02_input_data', 'events_FMO')
@@ -133,9 +133,9 @@ from datetime import date
 
 
 # Essential parameters
-model_name = 'Gievenbeck_LSTM_Test' + '_' +str(date.today())
-model_folder = os.path.join('05_models','train_test', model_name)
-node = 'R0019769'
+model_name = 'Demo' + '_' +str(date.today())
+model_folder = os.path.join('05_models','demo', model_name)
+node = 'R0026632'
 
 def train_LSTM(model_name, model_folder, node):
 
@@ -224,9 +224,9 @@ import subprocess
 ######## Start of Input section
 export_name = 'Eval_Test' + '_' + str(date.today()) + '.ipynb'
 model_names = [model_name]
-model_alias = ['"Test Model"']
-title = 'Test evaluation'
-model_folder = os.path.join('05_models','train_test')
+model_alias = ['"Demo"']
+title = 'Demo-Auswertung'
+model_folder = os.path.join('05_models','demo')
 
 
 ######## End of Input section 

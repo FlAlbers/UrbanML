@@ -184,4 +184,5 @@ if __name__ == '__main__':
     plt.title('Outfall Flow')
     plt.legend([sim_data[0] for sim_data in sims_data])
     plt.show()
+    
 
